@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -91,6 +92,58 @@ func TestFailedFeedPreservesLastGoodAndCooldown(t *testing.T) {
 	}
 	if !state.NextAttempt.Equal(o.Now.Add(12 * time.Hour)) {
 		t.Fatal("failure lost durable cooldown")
+	}
+}
+
+func TestFailedRefreshKeepsBothRegionalCachesAndTerrain(t *testing.T) {
+	for _, failure := range []string{"http 503", "truncated late-region feed", "duplicate region field"} {
+		t.Run(failure, func(t *testing.T) {
+			calls := 0
+			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calls++
+				if calls == 1 {
+					w.Header().Set("ETag", `"last-good"`)
+					fmt.Fprint(w, strings.Replace(feed(fixtureCell), `"region":"SEA"`, `"region":"YYZ"`, 1))
+					return
+				}
+				switch failure {
+				case "http 503":
+					w.WriteHeader(http.StatusServiceUnavailable)
+				case "truncated late-region feed":
+					fmt.Fprint(w, `{"regions":[{"grid_squares":[`+fixtureCell+`]`)
+				case "duplicate region field":
+					fmt.Fprint(w, `{"regions":[{"region":"YYZ","grid_squares":[`+fixtureCell+`],"region":"YKF"}],"success":true,"global":true,"schema_version":2,"generated_at":1791832854}`)
+				}
+			}))
+			defer s.Close()
+			o := testOptions(t, s.URL)
+			before, err := Sync(context.Background(), o)
+			if err != nil {
+				t.Fatal(err)
+			}
+			terrain := filepath.Join(o.OutputDir, "regions", "YKF", "meta.json")
+			if err = os.WriteFile(terrain, []byte(`{"fixture":"valid terrain map"}`), 0644); err != nil {
+				t.Fatal(err)
+			}
+			terrainHash, err := fileHash(terrain)
+			if err != nil {
+				t.Fatal(err)
+			}
+			o.Now = o.Now.Add(12 * time.Hour)
+			after, err := Sync(context.Background(), o)
+			if err == nil || after.Error == "" || !after.LastSuccess.Equal(before.LastSuccess) || after.ETag != before.ETag {
+				t.Fatalf("failed refresh changed validation state: before=%+v after=%+v err=%v", before, after, err)
+			}
+			if !reflect.DeepEqual(before.CacheHashes, after.CacheHashes) || !cacheComplete(o, before.CacheHashes) {
+				t.Fatal("failed refresh changed or damaged a last-good regional cache")
+			}
+			if got, err := fileHash(terrain); err != nil || got != terrainHash {
+				t.Fatal("failed measured refresh changed the independent terrain map")
+			}
+			if _, err = Sync(context.Background(), o); err != nil || calls != 2 {
+				t.Fatalf("failure lost its persisted cooldown: calls=%d err=%v", calls, err)
+			}
+		})
 	}
 }
 

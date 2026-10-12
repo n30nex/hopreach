@@ -139,11 +139,17 @@ func parseRegion(d *json.Decoder, dir string, regions []Region, contains func(fl
 	if err = delimiter(d, '{'); err != nil {
 		return result, err
 	}
-	var f *os.File
-	haveCells := false
+	var candidates map[string]regionData
+	haveCells, haveRegion := false, false
 	defer func() {
-		if f != nil {
-			_ = f.Close()
+		// Candidate spools are closed by readCells before returning here. Keep
+		// only this section's selected IATA; no other candidate belongs to it.
+		for code, candidate := range candidates {
+			if candidate.path != "" && (err != nil || code != result.IATA) {
+				if removeErr := os.Remove(candidate.path); err == nil && removeErr != nil {
+					err = removeErr
+				}
+			}
 		}
 	}()
 	for d.More() {
@@ -153,6 +159,10 @@ func parseRegion(d *json.Decoder, dir string, regions []Region, contains func(fl
 		}
 		switch key {
 		case "region":
+			if haveRegion {
+				return result, fmt.Errorf("duplicate region field")
+			}
+			haveRegion = true
 			err = d.Decode(&result.IATA)
 		case "total_squares":
 			err = d.Decode(&result.SourceTotal)
@@ -161,7 +171,7 @@ func parseRegion(d *json.Decoder, dir string, regions []Region, contains func(fl
 				return result, fmt.Errorf("duplicate grid_squares array")
 			}
 			haveCells = true
-			err = readCells(d, &result, &f, dir, regions, contains, maxCells)
+			candidates, err = readCells(d, result.IATA, dir, regions, contains, maxCells)
 		default:
 			err = skipValue(d, 0)
 		}
@@ -175,60 +185,9 @@ func parseRegion(d *json.Decoder, dir string, regions []Region, contains func(fl
 	if allowed(regions, result.IATA) && !haveCells {
 		return result, fmt.Errorf("selected MeshMapper region has no grid_squares array")
 	}
-	if f != nil {
-		err = f.Close()
-		f = nil
-	}
-	return result, err
-}
-
-func readCells(d *json.Decoder, result *regionData, f **os.File, dir string, regions []Region, contains func(float64, float64) bool, maxCells int) error {
-	if err := delimiter(d, '['); err != nil {
-		return err
-	}
-	for d.More() {
-		// A known foreign region is discarded one object at a time, without
-		// materialising a region-sized value. JSON object field order is not
-		// assumed: before region is known, stage only Canadian/local cells.
-		if result.IATA != "" && !allowed(regions, result.IATA) {
-			var ignored struct{}
-			if err := d.Decode(&ignored); err != nil {
-				return err
-			}
-			continue
-		}
-		var c Cell
-		if err := d.Decode(&c); err != nil {
-			return fmt.Errorf("invalid MeshMapper cell encoding: %w", err)
-		}
-		if !validCell(c) {
-			result.Invalid++
-			continue
-		}
-		lat, lon := (c.Bounds.South+c.Bounds.North)/2, (c.Bounds.West+c.Bounds.East)/2
-		if !withinRegion(regions, result.IATA, lat, lon) || !contains(lat, lon) {
-			result.Excluded++
-			continue
-		}
-		if result.Count >= maxCells {
-			result.Truncated = true
-			continue
-		}
-		if *f == nil {
-			var err error
-			*f, err = os.CreateTemp(dir, "cells-*.jsonl")
-			if err != nil {
-				return err
-			}
-			result.path = (*f).Name()
-		}
-		c.Timestamp, c.FirstSeen = seconds(c.Timestamp), seconds(c.FirstSeen)
-		if err := json.NewEncoder(*f).Encode(c); err != nil {
-			return err
-		}
-		result.Count++
-	}
-	return delimiter(d, ']')
+	candidate := candidates[result.IATA]
+	candidate.IATA, candidate.SourceTotal = result.IATA, result.SourceTotal
+	return candidate, nil
 }
 
 func allowed(regions []Region, code string) bool {

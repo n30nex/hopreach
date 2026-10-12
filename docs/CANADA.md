@@ -105,7 +105,10 @@ There are no visitor-triggered upstream requests or automatic rapid retries.
 The global document is parsed one region and cell at a time. Only configured
 Canadian IATA cells whose centres pass the exact Canadian polygon and that
 IATA's radius survive. Foreign sections are discarded; late JSON metadata is
-supported. At most 100,000 cells per IATA are retained, with an explicit partial
+supported. When a section identifies its IATA after the cells, each configured
+IATA has an independent capped private candidate; unused candidates are removed
+as soon as that section is identified. A different region cannot consume the
+selected region's cap. At most 100,000 cells per IATA are retained, with an explicit partial
 flag. Bounded private candidates are published only after the entire envelope
 passes validation. Errors preserve last-good regional files. An omitted region
 retains its old snapshot and is disclosed in the public refresh status.

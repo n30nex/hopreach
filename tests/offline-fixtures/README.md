@@ -13,10 +13,11 @@ npx playwright test
 docker compose -f tests/offline-fixtures/compose.yml down --volumes --remove-orphans
 ```
 
-The stack has its own project name, no production volumes, and an internal
-network that blocks outbound service traffic. Both server and browser DEM
-requests reach the fixture. The existing page still loads pinned Leaflet assets
-and map basemaps from their public CDNs; they are not sources of mesh data.
+The stack has its own Compose project/network and no production volumes or
+credentials. Its CoreScope URL and both server/browser DEM paths point only to
+the fixture, checked by the fixture tests. The published port binds to loopback.
+The network permits outbound traffic. The existing page loads pinned Leaflet
+assets and map basemaps from public CDNs; they are not sources of mesh data.
 
 `/e2e-ready` waits for all four real coverage tiers and both scope overlays.
 Tiny 48/64-pixel CPU rasters keep the complete pipeline inexpensive. Timestamps

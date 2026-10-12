@@ -3,6 +3,8 @@ import hashlib
 import hmac
 import io
 import json
+from pathlib import Path
+import re
 import struct
 import threading
 import unittest
@@ -116,6 +118,20 @@ class FixtureTests(unittest.TestCase):
                 body = io.BytesIO(json.dumps(data).encode())
                 with patch.object(server.urllib.request, "urlopen", return_value=body):
                     self.assertEqual(server.readiness(), expected)
+
+    def test_stack_pins_synthetic_sources_and_publishes_only_on_loopback(self):
+        root = Path(__file__).parent
+        config = (root / "config.fixture.yaml").read_text()
+        urls = re.findall(r"^\s+(?:api_url|dem_tile_url_base): (.+)$", config, re.MULTILINE)
+        self.assertEqual(urls, ["http://fixture:8000", "http://fixture:8000/terrarium"])
+        nginx = (root / "default.conf.template").read_text()
+        self.assertIn("proxy_pass http://fixture:8000/terrarium/;", nginx)
+        self.assertIn("proxy_pass {{.CoreScopeAPIURL}}/;", nginx)
+        compose = (root / "compose.yml").read_text()
+        self.assertIn("127.0.0.1:${HOPREACH_E2E_PORT:-8080}:80", compose)
+        self.assertIn("./config.fixture.yaml:/config/config.yaml:ro", compose)
+        self.assertIn("./default.conf.template:/etc/nginx/conf.d/default.conf.template:ro", compose)
+        self.assertNotIn("internal: true", compose)
 
 
 if __name__ == "__main__":

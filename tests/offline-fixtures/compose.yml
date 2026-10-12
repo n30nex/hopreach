@@ -30,6 +30,3 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 60
-networks:
-  default:
-    internal: true

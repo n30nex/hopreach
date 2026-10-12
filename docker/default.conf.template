@@ -127,8 +127,13 @@ server {
     # existing bookmark or external script doesn't 404; safe to delete once
     # nothing external depends on it.
     location /corescope-api/ {
+        {{if .Regional}}
+        # A global passthrough would bypass the Canadian IATA/geofence API.
+        return 404;
+        {{else}}
         proxy_pass {{.CoreScopeAPIURL}}/;
         proxy_set_header Host $proxy_host;
         proxy_ssl_server_name on;
+        {{end}}
     }
 }

@@ -15,11 +15,12 @@ type appConfig struct {
 	// build the Source without knowing which backend it got.
 	source yconfig.Config
 
-	apiURL        string
-	activeHours   float64
-	degradedHours float64
-	outputDir     string
-	timeout       time.Duration
+	apiURL             string
+	activeHours        float64
+	degradedHours      float64
+	outputDir          string
+	analyticsOutputDir string
+	timeout            time.Duration
 
 	// requiredScope, if non-empty, restricts results to nodes whose
 	// default_scope matches "#"+requiredScope. Empty disables this filter.

@@ -126,6 +126,7 @@ func writeConfigJS(yc yconfig.Config) error {
 // nginxTemplateData is the fields available to nginxConfTemplate.
 type nginxTemplateData struct {
 	CoreScopeAPIURL string
+	Regional       bool
 }
 
 func writeNginxConf(yc yconfig.Config) error {
@@ -144,7 +145,7 @@ func writeNginxConf(yc yconfig.Config) error {
 	}
 	defer f.Close()
 
-	return tmpl.Execute(f, nginxTemplateData{CoreScopeAPIURL: yc.CoreScope.APIURL})
+	return tmpl.Execute(f, nginxTemplateData{CoreScopeAPIURL: yc.CoreScope.APIURL, Regional: len(yc.Regions.Entries) > 0})
 }
 
 func writeCronFile(yc yconfig.Config, configPath string) error {

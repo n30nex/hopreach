@@ -15,6 +15,9 @@ func TestRunConfiguredIsolatedSequentialRegionsContinueAfterFailure(t *testing.T
 	var seen []string
 	err := runConfigured(c, true, false, func(a appConfig) error {
 		seen = append(seen, a.source.CoreScope.Region)
+		if a.analyticsRoot() != c.OutputDir {
+			t.Fatalf("regional history escaped shared analytics root: %s", a.analyticsRoot())
+		}
 		if !strings.HasSuffix(a.outputDir, "/regions/"+a.source.CoreScope.Region) || !a.forceRecompute {
 			t.Fatalf("unscoped config %+v", a)
 		}

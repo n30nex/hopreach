@@ -295,8 +295,8 @@ func run(cfg appConfig) (err error) {
 		}
 	}
 	didRun = true
-	runsPath = analyticsPath(cfg.outputDir, "runs.jsonl")
-	markerPath = analyticsPath(cfg.outputDir, "in_progress.json")
+	runsPath = analyticsPath(cfg.analyticsRoot(), "runs.jsonl")
+	markerPath = analyticsPath(cfg.analyticsRoot(), "in_progress.json")
 	recordCrashedRunIfAny(runsPath, markerPath, filepath.Join(cfg.outputDir, "progress.json"))
 	if merr := analytics.Append(markerPath, analytics.InProgressMarker{StartedAt: startedAt}, 1); merr != nil {
 		log.Printf("analytics: could not write in-progress marker: %v", merr)
@@ -308,7 +308,7 @@ func run(cfg appConfig) (err error) {
 	if cfg.coveragePrecisionChunkBudgetMB > 0 {
 		engine.SetChunkBudgetBytes(float64(cfg.coveragePrecisionChunkBudgetMB) * 1_000_000)
 	}
-	recordLocalHardwareInfo(cfg.outputDir, engine)
+	recordLocalHardwareInfo(cfg.analyticsRoot(), engine)
 
 	httpClient := &http.Client{Timeout: cfg.timeout}
 	if err := os.MkdirAll(cfg.outputDir, 0o755); err != nil {

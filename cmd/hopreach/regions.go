@@ -25,6 +25,7 @@ func runConfigured(c config.Config, force, all bool, runOne func(appConfig) erro
 			return err
 		}
 		cfg := toAppConfig(selected)
+		cfg.analyticsOutputDir = c.OutputDir
 		cfg.forceRecompute = force || all
 		cfg.forceAllTiers = all
 		log.Printf("regional coverage: %s (%s)", r.IATA, r.Name)
@@ -33,4 +34,13 @@ func runConfigured(c config.Config, force, all bool, runOne func(appConfig) erro
 		}
 	}
 	return errors.Join(failures...)
+}
+
+// Regional files are nested; run history remains alongside the base output,
+// where the share API and persistent analytics volume already expect it.
+func (c appConfig) analyticsRoot() string {
+	if c.analyticsOutputDir != "" {
+		return c.analyticsOutputDir
+	}
+	return c.outputDir
 }

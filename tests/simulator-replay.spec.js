@@ -367,7 +367,7 @@ test("replays a real CoreScope packet: proven vs. predicted bottleneck analysis"
 test("the API decodes real packet regions server-side", async ({ request }) => {
   const crypto = require("crypto");
 
-  const statsResp = await request.get("http://localhost:8080/mesh-api/api/scope-stats");
+  const statsResp = await request.get("/mesh-api/api/scope-stats");
   test.skip(!statsResp.ok(), "scope-stats unavailable");
   const names = ((await statsResp.json()).byRegion || []).map((r) => r.name).filter(Boolean);
   test.skip(names.length === 0, "no live regions to decode against");
@@ -376,7 +376,7 @@ test("the API decodes real packet regions server-side", async ({ request }) => {
   const until = Date.now();
   const since = until - 6 * 60 * 60 * 1000;
   const pktResp = await request.get(
-    `http://localhost:8080/mesh-api/api/packets?since=${since}&until=${until}&limit=200`
+    `/mesh-api/api/packets?since=${since}&until=${until}&limit=200`
   );
   expect(pktResp.ok(), "the packet window must not error — a 502 here is the " +
     "replay being broken, not the mesh being quiet").toBeTruthy();
@@ -403,7 +403,7 @@ test("the API decodes real packet regions server-side", async ({ request }) => {
     return "";
   };
 
-  const rawResp = await request.get("http://localhost:8080/corescope-api/api/packets?limit=200");
+  const rawResp = await request.get("/corescope-api/api/packets?limit=200");
   test.skip(!rawResp.ok(), "vendor API unavailable for cross-checking");
   const rawByHash = new Map(
     ((await rawResp.json()).packets || []).filter((p) => p.raw_hex).map((p) => [p.hash, p.raw_hex])

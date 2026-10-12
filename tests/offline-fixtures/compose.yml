@@ -1,0 +1,35 @@
+# Standalone test stack: no production volumes, credentials, or live data sources.
+name: hopreach-e2e
+services:
+  fixture:
+    image: python:3.13-slim
+    command: ["python", "-B", "/fixtures/server.py"]
+    volumes:
+      - .:/fixtures:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 1s
+      timeout: 2s
+      retries: 15
+  hopreach:
+    build:
+      context: ../..
+    image: hopreach:e2e
+    depends_on:
+      fixture:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${HOPREACH_E2E_PORT:-8080}:80"
+    volumes:
+      - ./config.fixture.yaml:/config/config.yaml:ro
+      - ./boundary.geojson:/config/fixture-boundary.geojson:ro
+      - ./default.conf.template:/etc/nginx/conf.d/default.conf.template:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/e2e-ready"]
+      interval: 2s
+      timeout: 5s
+      start_period: 10s
+      retries: 60
+networks:
+  default:
+    internal: true

@@ -46,7 +46,8 @@ def make_packet(index):
         code = hmac.new(key, bytes([payload_type]) + payload, "sha256").digest()[:2]
         raw += code + code
     raw += bytes([len(path)]) + bytes.fromhex("".join(key[:2] for key in path)) + payload
-    return {"hash": hashlib.sha256(payload).hexdigest(), "timestamp": timestamp(-index * 5),
+    # CoreScope packet IDs (unlike node public keys) are 16 hex characters.
+    return {"hash": hashlib.sha256(payload).hexdigest()[:16], "timestamp": timestamp(-index * 5),
             "raw_hex": raw.hex(), "route_type": route, "observer_id": path[-1],
             "resolved_path": path, "_parsedPath": [key[:2] for key in path],
             "snr": 10, "decoded_json": json.dumps({"pubKey": path[0]}),

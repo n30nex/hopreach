@@ -75,16 +75,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
       - name: Verify synthetic API and terrain fixtures
         run: python3 -B -m unittest discover -s tests/offline-fixtures -p test_server.py
 
       - name: Build real HopReach test image
         run: docker compose -f "$HOPREACH_E2E_COMPOSE" build
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
 
       - run: npm ci
 

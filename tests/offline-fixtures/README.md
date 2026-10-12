@@ -5,6 +5,8 @@ simulator used by a deployment. Only the CoreScope API and elevation input are
 synthetic. Six fictional Ontario repeaters provide bidirectional reach, scoped
 and unscoped floods, resolved paths, and multiple packet observations. The PNG
 terrain is uniformly 100 m. No captured packets or private identifiers are used.
+Fixture checks use Python's standard library and the project's Node runtime to
+round-trip packet IDs through the real browser replay parser.
 
 ```sh
 python3 -B -m unittest discover -s tests/offline-fixtures -p test_server.py

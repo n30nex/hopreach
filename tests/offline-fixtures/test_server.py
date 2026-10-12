@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import struct
+import subprocess
 import threading
 import unittest
 import urllib.error
@@ -77,6 +78,21 @@ class FixtureTests(unittest.TestCase):
                 message = bytes([(raw[0] >> 2) & 15]) + raw[offset + 1 + count * width:]
                 matches = [n for n in names if hmac.new(hashlib.sha256(n.encode()).digest()[:16], message, "sha256").digest()[:2] == raw[1:3]]
                 self.assertEqual(matches, [packet["scope"]])
+
+    def test_browser_hash_extraction_resolves_every_fixture_packet(self):
+        hashes = [p["hash"] for p in self.get("/api/packets")["packets"]]
+        module = Path(__file__).resolve().parents[2] / "public" / "mesh-frame.js"
+        script = ("const {extractPacketHash} = require(process.argv[1]);"
+                  "const ids = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));"
+                  "process.stdout.write(JSON.stringify(ids.map(extractPacketHash)));")
+        result = subprocess.run(["node", "-e", script, str(module)], input=json.dumps(hashes),
+                                text=True, capture_output=True, check=True)
+        replay_hashes = json.loads(result.stdout)
+        self.assertEqual(replay_hashes, hashes, "fixture IDs must survive the real replay input parser")
+        self.assertEqual(len(set(replay_hashes)), len(hashes))
+        for packet_hash in replay_hashes:
+            detail = self.get("/api/packets/" + packet_hash)
+            self.assertEqual(detail["packet"]["hash"], packet_hash)
 
     def test_terrain_is_a_valid_flat_100_metre_terrarium_tile(self):
         with urllib.request.urlopen(self.base + "/terrarium/11/564/748.png") as response:

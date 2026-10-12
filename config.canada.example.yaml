@@ -230,7 +230,9 @@ propagation:
 # Confirm the site's frequency, antenna heights and gains before planning.
 coverage:
   image_width: 640
-  min_recompute_interval_hours: 24
+  # Restart guard: 24 hours after a prior run can miss the next daily cron.
+  # Individual tiers already skip successful same-day raster work.
+  min_recompute_interval_hours: 1
   calibrated_requires_gpu: true
   precision_requires_gpu: true
   calibrated_precision_requires_gpu: true

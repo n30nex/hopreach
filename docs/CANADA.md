@@ -42,6 +42,11 @@ process lock. Each region owns `data/regions/<IATA>/` with its own cached raster
 metadata, freshness check and progress. A failed region does not prevent the
 others from refreshing. No visitor request starts terrain computation.
 
+The example keeps its daily cron and uses a one-hour restart guard. A 24-hour
+minimum measured from the prior run can skip the next scheduled refresh after
+normal timing drift or a midday install. Per-tier same-day checks still prevent
+redundant raster computation.
+
 `source.request_concurrency` caps the pipeline's reach batch and public mesh API
 work across regions. Use 1 for a small CoreScope host. Public requests have a
 bounded 32-request admission queue and use `corescope.request_timeout_seconds`.

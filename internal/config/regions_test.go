@@ -2,10 +2,13 @@ package config
 
 import "testing"
 
-func TestCanadianExamplePreservesAccentedCityNames(t *testing.T) {
+func TestCanadianExamplePreservesNamesAndDailyCadence(t *testing.T) {
 	cfg, _, err := Load("../../config.canada.example.yaml")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if cfg.Coverage.MinRecomputeIntervalHours != 1 || cfg.Schedule.Cron != "0 4 * * *" {
+		t.Errorf("Canadian example must pair its daily cron with a one-hour restart guard; got %q and %g hours", cfg.Schedule.Cron, cfg.Coverage.MinRecomputeIntervalHours)
 	}
 	names := make(map[string]string, len(cfg.Regions.Entries))
 	for _, region := range cfg.Regions.Entries {

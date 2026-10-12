@@ -978,4 +978,10 @@
     panBy: (dx, dy) => map.panBy([dx, dy], { animate: false }),
     getSavedSetups: () => loadAllSetups(),
   };
+  window.SimPresets.init({
+    root: window,
+    importSetup: importSetupFromFile,
+    openPanel: () => setSimPanelOpen(true),
+    setStatus,
+  });
 })();

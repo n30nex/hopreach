@@ -273,7 +273,7 @@
         pane: "simNodesPane",
       })
         .addTo(simNodesLayer)
-        .bindTooltip(`${n.label} (${n.source})${typeSuffix}${n.address ? ` · ${n.address}` : ""}`)
+        .bindTooltip(escapeHtml(`${n.label} (${n.source})${typeSuffix}${n.address ? ` · ${n.address}` : ""}`))
         // Once a simulation has run, clicking a repeater is much more
         // often "what happened here" than "let me tweak its settings" —
         // show the packet inspector instead. Settings are still reachable

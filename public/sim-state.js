@@ -37,6 +37,7 @@
     lastAttrsList: null,
     lastStressResult: null,
     currentSetupId: null,
+    setupProvenance: null,
     predictWorker: null,
     predictGeneration: 0,
     nodeGrowthCounts: [],

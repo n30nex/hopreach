@@ -173,7 +173,7 @@ func TestCredentialNeverFollowsRedirect(t *testing.T) {
 	forwarded := false
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { forwarded = true }))
 	defer target.Close()
-	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, target.URL, 302) }))
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, target.URL, http.StatusFound) }))
 	defer source.Close()
 	o := testOptions(t, source.URL)
 	if _, err := Sync(context.Background(), o); err == nil || forwarded {

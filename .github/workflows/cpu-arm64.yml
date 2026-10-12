@@ -1,0 +1,29 @@
+name: ARM64 CPU
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu:
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        cgo: ["0", "1"]
+    env:
+      CGO_ENABLED: ${{ matrix.cgo }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build ./...
+      - name: Build browser propagation module
+        run: GOOS=js GOARCH=wasm CGO_ENABLED=0 go build -o /tmp/hopreach.wasm ./wasm

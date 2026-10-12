@@ -17,10 +17,12 @@
 <link rel="stylesheet" href="style-simulator.css">
 <link rel="stylesheet" href="style-leaflet.css">
 <link rel="stylesheet" href="style-mobile.css">
+<link rel="stylesheet" href="regions.css">
 </head>
 <body>
 <div id="app">
   <header>
+    <a id="canadaverse-brand" href="https://canadaverse.org/" aria-label="Canadaverse home" hidden><img src="canadaverse-emblem.svg" alt=""></a>
     <div>
       <h1 id="site-title">ScotMesh Repeater Coverage</h1>
       <span class="subtitle" id="site-subtitle">MeshCore repeater map, refreshed daily</span>
@@ -35,6 +37,12 @@
       <span class="stat" id="last-updated">Last updated: –</span>
     </div>
   </header>
+  <section id="regional-controls" aria-label="Canadian coverage region" hidden>
+    <label for="iata-select">Canada / IATA region</label>
+    <select id="iata-select" aria-describedby="regional-status"></select>
+    <p id="regional-warning" role="alert" hidden></p>
+    <p id="regional-status" role="status" aria-live="polite"></p>
+  </section>
   <div id="error-banner"></div>
   <div id="progress-banner" class="hidden">
     <div id="progress-text">Computing coverage…</div>
@@ -878,11 +886,19 @@
     </div>
     <div id="sim-rankings-fullwindow-body"></div>
   </div>
+  <footer id="regional-footer" hidden>
+    <a href="https://canadaverse.org/">Canadaverse</a> ·
+    Powered by <a href="https://github.com/A13xB0/hopreach">HopReach</a> ·
+    <a href="https://github.com/n30nex/hopreach">Source &amp; licence</a> ·
+    Canadian boundary: <a href="https://www.geoboundaries.org/">geoBoundaries / OpenStreetMap, ODbL</a> ·
+    Airport catalogue: <a href="https://ourairports.com/data/">OurAirports</a>
+  </footer>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="config.js"></script>
+<script src="regions.js"></script>
 <script src="carto-tiles.js"></script>
 <script src="wasm_exec.js"></script>
 <script src="wasm-bridge.js"></script>

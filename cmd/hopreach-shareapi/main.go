@@ -243,7 +243,11 @@ func main() {
 	// the browser in one stable shape (internal/meshapi). Without this the
 	// front end talks a vendor's API directly and a second backend would mean
 	// a second parser for every response.
-	if src, err := sources.FromConfig(cfg); err != nil {
+	if len(cfg.Regions.Entries) > 0 {
+		if err := registerRegionalAPI(cfg); err != nil {
+			log.Fatalf("shareapi: regional mesh API: %v", err)
+		}
+	} else if src, err := sources.FromConfig(cfg); err != nil {
 		// A misconfigured backend must not silently fall back to another
 		// network's data — but it also must not stop plan sharing working.
 		log.Printf("shareapi: mesh API disabled: %v", err)

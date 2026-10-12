@@ -373,28 +373,33 @@ func run(cfg appConfig) (err error) {
 			}
 		}
 
-		// Calibration doesn't depend on any coverage raster — computed here,
-		// ahead of every raster below, so repeaters.geojson/meta.json (see
-		// after this block) can include calibrated positions and be written
-		// well before the first coverage tile exists, rather than everyone
-		// having to wait for the entire run just to see the repeater list.
-		prog.Update("fetching_reach_data", 0, 1, "Fetching observed reach data from CoreScope")
-		reachByPubkey := meshsource.FetchAllReach(ctx, src, selected, cfg.calibration.ReachDays, func(done, total int) {
-			prog.Update("fetching_reach_data", done, total, fmt.Sprintf("Fetching reach data (%d/%d)", done, total))
-		})
-		calResults = make([]calibration.Result, len(selected))
-		calibratedSites = make([]propagation.Site, len(selected))
-		for i, n := range selected {
-			links := reachByPubkey[n.PublicKey]
-			cr := calibration.Position(grid, cfg.propagation, cfg.calibration, *n.Lat, *n.Lon, links)
-			calResults[i] = cr
-			calibratedSites[i] = propagation.Site{
-				Lat:       cr.Lat,
-				Lon:       cr.Lon,
-				GroundM:   cr.GroundM,
-				TxHeightM: cr.GroundM + cfg.propagation.AntennaHeightM,
+		// Reach is one upstream request per node. If neither calibrated tier
+		// can run on this host, skip the whole batch and position search.
+		if calibrationEnabled(cfg, engine.Available()) {
+			// Calibration doesn't depend on any coverage raster — computed here,
+			// ahead of every raster below, so repeaters.geojson/meta.json (see
+			// after this block) can include calibrated positions and be written
+			// well before the first coverage tile exists, rather than everyone
+			// having to wait for the entire run just to see the repeater list.
+			prog.Update("fetching_reach_data", 0, 1, "Fetching observed reach data from CoreScope")
+			reachByPubkey := meshsource.FetchAllReachWithWorkers(ctx, src, selected, cfg.calibration.ReachDays, cfg.source.Source.RequestConcurrency, func(done, total int) {
+				prog.Update("fetching_reach_data", done, total, fmt.Sprintf("Fetching reach data (%d/%d)", done, total))
+			})
+			calResults = make([]calibration.Result, len(selected))
+			calibratedSites = make([]propagation.Site, len(selected))
+			for i, n := range selected {
+				links := reachByPubkey[n.PublicKey]
+				cr := calibration.Position(grid, cfg.propagation, cfg.calibration, *n.Lat, *n.Lon, links)
+				calResults[i] = cr
+				calibratedSites[i] = propagation.Site{
+					Lat:       cr.Lat,
+					Lon:       cr.Lon,
+					GroundM:   cr.GroundM,
+					TxHeightM: cr.GroundM + cfg.propagation.AntennaHeightM,
+				}
 			}
 		}
+
 	} else {
 		sites = make([]propagation.Site, len(selected))
 	}
@@ -469,6 +474,19 @@ func run(cfg appConfig) (err error) {
 		// briefly vanishing for anyone loading the page mid-run.
 		Coverage:      previousCoverage(cfg.outputDir),
 		ScopeCoverage: previousScopeCoverage(cfg.outputDir),
+	}
+	if len(features) == 0 {
+		// A now-empty region must not retain a previous run's predicted raster.
+		m.Coverage = nil
+		m.ScopeCoverage = nil
+	}
+	if cfg.source.CoreScope.Region != "" {
+		for _, r := range cfg.source.Regions.Entries {
+			if r.IATA == cfg.source.CoreScope.Region {
+				m.Region = &r
+				break
+			}
+		}
 	}
 	// previousCoverage is nil on a genuine first run (or when the last
 	// meta.json never got a coverage tier — e.g. an earlier run died before
@@ -633,13 +651,9 @@ func run(cfg appConfig) (err error) {
 			}
 		}
 
-		// The calibration search itself already ran above regardless of GPU
-		// gating — it's a cheap CPU-only ring search, and its per-repeater
-		// results (calibration_offset_m etc.) are valuable on their own
-		// even without rendering a full calibrated coverage raster. Only
-		// the raster itself (which goes through engine.Margins/GPU) is
-		// gated.
-		calibratedGpuOK := !cfg.calibratedRequiresGPU || engine.Available()
+		// Calibration and its upstream evidence batch run only when at
+		// least one calibrated output is enabled on this host.
+		calibratedGpuOK := len(calibratedSites) > 0 && (!cfg.calibratedRequiresGPU || engine.Available())
 		if calibratedGpuOK && shouldComputeTier(m.Coverage.Calibrated) {
 			tierStart := time.Now()
 			prog.Update("computing_coverage_calibrated", 0, 1, "Computing coverage from calibrated positions")
@@ -669,7 +683,7 @@ func run(cfg appConfig) (err error) {
 		grid.Close()
 
 		precisionGpuOK := !cfg.precisionRequiresGPU || engine.Available()
-		calibratedPrecisionGpuOK := !cfg.calibratedPrecisionRequiresGPU || engine.Available()
+		calibratedPrecisionGpuOK := len(calibratedSites) > 0 && (!cfg.calibratedPrecisionRequiresGPU || engine.Available())
 		// Folds the same-day freshness check in here too (not just the GPU
 		// gate) — so when both precision tiers already ran today, the
 		// entire high-resolution terrain fetch below is skipped as well,

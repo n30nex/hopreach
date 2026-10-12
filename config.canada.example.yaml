@@ -1,0 +1,242 @@
+# Canadaverse regional coverage: real CoreScope IATA membership + Canada polygon.
+# Mount the attributed Canada boundary at /config/canada.geojson; see docs/CANADA.md.
+output_dir: /usr/share/nginx/html/data
+site:
+  name: Canadaverse Coverage
+  subtitle: Canadian MeshCore coverage by IATA region
+map:
+  center_lat: 43.4608
+  center_lon: -80.3786
+  zoom: 9
+source:
+  type: corescope
+  request_concurrency: 1
+corescope:
+  api_url: https://your-corescope.example
+  request_timeout_seconds: 15
+  scope_observation:
+    enabled: false
+region:
+  name: Canada
+  boundary_path: /config/canada.geojson
+regions:
+  default_iata: YKF
+  entries:
+    - iata: YKF
+      name: "Waterloo"
+      center_lat: 43.4608
+      center_lon: -80.378601
+      zoom: 9
+      radius_km: 200
+    - iata: YYZ
+      name: "Toronto"
+      center_lat: 43.675935
+      center_lon: -79.629421
+      zoom: 9
+      radius_km: 200
+    - iata: XCM
+      name: "Chatham-Kent"
+      center_lat: 42.3064002991
+      center_lon: -82.0819015503
+      zoom: 9
+      radius_km: 200
+    - iata: YCD
+      name: "Nanaimo"
+      center_lat: 49.05497
+      center_lon: -123.869863
+      zoom: 9
+      radius_km: 200
+    - iata: YEG
+      name: "Edmonton"
+      center_lat: 53.3097
+      center_lon: -113.580002
+      zoom: 9
+      radius_km: 200
+    - iata: YGK
+      name: "Kingston"
+      center_lat: 44.2253
+      center_lon: -76.596901
+      zoom: 9
+      radius_km: 200
+    - iata: YHM
+      name: "Hamilton"
+      center_lat: 43.171308
+      center_lon: -79.929416
+      zoom: 9
+      radius_km: 200
+    - iata: YHU
+      name: "MontrÃ©al"
+      center_lat: 45.517502
+      center_lon: -73.416901
+      zoom: 9
+      radius_km: 200
+    - iata: YHZ
+      name: "Halifax"
+      center_lat: 44.8807983398
+      center_lon: -63.5085983276
+      zoom: 9
+      radius_km: 200
+    - iata: YKA
+      name: "Kamloops"
+      center_lat: 50.703038
+      center_lon: -120.448641
+      zoom: 9
+      radius_km: 200
+    - iata: YLK
+      name: "Barrie"
+      center_lat: 44.485056
+      center_lon: -79.554663
+      zoom: 9
+      radius_km: 200
+    - iata: YML
+      name: "Charlevoix"
+      center_lat: 47.59749984741211
+      center_lon: -70.2238998413086
+      zoom: 9
+      radius_km: 200
+    - iata: YOW
+      name: "Ottawa"
+      center_lat: 45.322498
+      center_lon: -75.669197
+      zoom: 9
+      radius_km: 200
+    - iata: YQA
+      name: "Gravenhurst"
+      center_lat: 44.975376
+      center_lon: -79.306546
+      zoom: 9
+      radius_km: 200
+    - iata: YQB
+      name: "Quebec"
+      center_lat: 46.7911
+      center_lon: -71.393303
+      zoom: 9
+      radius_km: 200
+    - iata: YQL
+      name: "Lethbridge"
+      center_lat: 49.6302986145
+      center_lon: -112.800003052
+      zoom: 9
+      radius_km: 200
+    - iata: YQT
+      name: "Thunder Bay"
+      center_lat: 48.371899
+      center_lon: -89.323898
+      zoom: 9
+      radius_km: 200
+    - iata: YQY
+      name: "Sydney"
+      center_lat: 46.161072
+      center_lon: -60.049759
+      zoom: 9
+      radius_km: 200
+    - iata: YRQ
+      name: "Trois-RiviÃ¨res"
+      center_lat: 46.35279846191406
+      center_lon: -72.67939758300781
+      zoom: 9
+      radius_km: 200
+    - iata: YSE
+      name: "Squamish"
+      center_lat: 49.7817001343
+      center_lon: -123.162002563
+      zoom: 9
+      radius_km: 200
+    - iata: YTF
+      name: "Alma"
+      center_lat: 48.5089
+      center_lon: -71.641899
+      zoom: 9
+      radius_km: 200
+    - iata: YTR
+      name: "Trenton"
+      center_lat: 44.118900299072266
+      center_lon: -77.5280990600586
+      zoom: 9
+      radius_km: 200
+    - iata: YUL
+      name: "MontrÃ©al"
+      center_lat: 45.467837
+      center_lon: -73.742294
+      zoom: 9
+      radius_km: 200
+    - iata: YVE
+      name: "Vernon"
+      center_lat: 50.246163
+      center_lon: -119.330963
+      zoom: 9
+      radius_km: 200
+    - iata: YVR
+      name: "Vancouver"
+      center_lat: 49.193901
+      center_lon: -123.183998
+      zoom: 9
+      radius_km: 200
+    - iata: YWG
+      name: "Winnipeg"
+      center_lat: 49.909999847399995
+      center_lon: -97.2398986816
+      zoom: 9
+      radius_km: 200
+    - iata: YXU
+      name: "London"
+      center_lat: 43.032845
+      center_lon: -81.149003
+      zoom: 9
+      radius_km: 200
+    - iata: YXX
+      name: "Abbotsford"
+      center_lat: 49.025299
+      center_lon: -122.361
+      zoom: 9
+      radius_km: 200
+    - iata: YYB
+      name: "North Bay"
+      center_lat: 46.363602
+      center_lon: -79.422798
+      zoom: 9
+      radius_km: 200
+    - iata: YYC
+      name: "Calgary"
+      center_lat: 51.118822
+      center_lon: -114.009933
+      zoom: 9
+      radius_km: 200
+    - iata: YYJ
+      name: "Victoria"
+      center_lat: 48.647201
+      center_lon: -123.427792
+      zoom: 9
+      radius_km: 200
+    - iata: YYY
+      name: "Mont-Joli"
+      center_lat: 48.60860061645508
+      center_lon: -68.20809936523438
+      zoom: 9
+      radius_km: 200
+    - iata: ZBM
+      name: "Bromont"
+      center_lat: 45.290798
+      center_lon: -72.741402
+      zoom: 9
+      radius_km: 200
+terrain:
+  dem_zoom: 10
+  dem_cache_dir: /data/dem-cache
+propagation:
+  frequency_mhz: 910.525
+  max_range_km: 100
+# Radio settings are model assumptions, not observations of transmitter power.
+# Confirm the site's frequency, antenna heights and gains before planning.
+coverage:
+  image_width: 640
+  min_recompute_interval_hours: 24
+  calibrated_requires_gpu: true
+  precision_requires_gpu: true
+  calibrated_precision_requires_gpu: true
+gpu:
+  mode: cpu
+schedule:
+  cron: '0 4 * * *'
+share:
+  store_dir: /data/shared-plans

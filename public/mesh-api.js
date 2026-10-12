@@ -21,7 +21,7 @@
   "use strict";
 
   // One definition. If it ever needs to vary per deployment, it varies here.
-  const BASE = "/mesh-api/api";
+  const BASE = typeof window !== "undefined" && window.HOPREACH_CONFIG && window.HOPREACH_CONFIG.meshApiBase || "/mesh-api/api";
 
   async function getJSON(url) {
     const resp = await fetch(url);

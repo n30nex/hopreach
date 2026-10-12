@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
 	"sync"
 )
 
@@ -32,8 +34,9 @@ type Node struct {
 }
 
 type nodesResponse struct {
-	Nodes []Node `json:"nodes"`
-	Total int    `json:"total"`
+	Nodes   []Node `json:"nodes"`
+	Total   int    `json:"total"`
+	HasMore *bool  `json:"has_more"`
 }
 
 // ReachLink mirrors one entry of CoreScope's GET /api/nodes/:pubkey/reach
@@ -61,6 +64,7 @@ type reachResponse struct {
 type Client struct {
 	BaseURL string
 	HTTP    *http.Client
+	Region  string
 }
 
 // NewClient returns a Client for baseURL. A nil httpClient uses
@@ -74,41 +78,57 @@ func NewClient(baseURL string, httpClient *http.Client) *Client {
 
 // FetchRepeaters fetches every role=repeater node, paginating as needed.
 func (c *Client) FetchRepeaters(ctx context.Context) ([]Node, error) {
+	return c.fetchNodes(ctx, "repeater")
+}
+
+// CoreScope can filter a page after pagination. has_more describes the scanned
+// page; advancing by returned rows would repeat or silently drop memberships.
+func (c *Client) fetchNodes(ctx context.Context, role string) ([]Node, error) {
 	var nodes []Node
-	offset := 0
-	for {
-		url := fmt.Sprintf("%s/api/nodes?role=repeater&limit=%d&offset=%d", c.BaseURL, pageLimit, offset)
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			return nil, fmt.Errorf("corescope: building request for %s: %w", url, err)
-		}
-		resp, err := c.HTTP.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("corescope: fetching %s: %w", url, err)
-		}
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			return nil, fmt.Errorf("corescope: fetching %s: unexpected status %d", url, resp.StatusCode)
+	const maxNodes = 100000
+	for offset := 0; offset < maxNodes; {
+		q := url.Values{"limit": {strconv.Itoa(pageLimit)}, "offset": {strconv.Itoa(offset)}}
+		if role != "" {
+			q.Set("role", role)
 		}
 		var page nodesResponse
-		err = json.NewDecoder(resp.Body).Decode(&page)
-		resp.Body.Close()
-		if err != nil {
-			return nil, fmt.Errorf("corescope: decoding response from %s: %w", url, err)
+		if err := c.getJSON(ctx, c.scopedURL(c.BaseURL+"/api/nodes?"+q.Encode()), &page); err != nil {
+			return nil, err
 		}
 		nodes = append(nodes, page.Nodes...)
-		offset += len(page.Nodes)
-		if len(page.Nodes) == 0 || offset >= page.Total {
-			break
+		if page.HasMore != nil {
+			if !*page.HasMore {
+				return nodes, nil
+			}
+			offset += pageLimit
+		} else {
+			offset += len(page.Nodes)
+			if len(page.Nodes) == 0 || offset >= page.Total {
+				return nodes, nil
+			}
 		}
 	}
-	return nodes, nil
+	return nil, fmt.Errorf("corescope: node paging exceeded %d scanned rows", maxNodes)
+}
+
+func (c *Client) scopedURL(raw string) string {
+	if c.Region == "" {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	q := u.Query()
+	q.Set("region", c.Region)
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 // FetchReach fetches one node's observed reach data for the given lookback
 // window (days).
 func (c *Client) FetchReach(ctx context.Context, pubkey string, days int) ([]ReachLink, error) {
-	url := fmt.Sprintf("%s/api/nodes/%s/reach?days=%d", c.BaseURL, pubkey, days)
+	url := c.scopedURL(fmt.Sprintf("%s/api/nodes/%s/reach?days=%d", c.BaseURL, url.PathEscape(pubkey), days))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("corescope: building request for %s: %w", url, err)

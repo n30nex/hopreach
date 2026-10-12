@@ -2,6 +2,7 @@
   const S = window.MapState;
 
   const cfg = window.HOPREACH_CONFIG;
+  const dataBase = cfg.dataBase || "data";
 
   document.getElementById("site-title").textContent = cfg.siteName;
   document.getElementById("site-subtitle").textContent = cfg.siteSubtitle;
@@ -72,7 +73,7 @@
   map.createPane("labels");
   map.getPane("labels").style.zIndex = 450;
   map.getPane("labels").style.pointerEvents = "none";
-  const darkLabels = L.tileLayer(HopReachCartoTiles.withKey("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", cfg.cartoApiKey || ""), {
+  const darkLabels = L.tileLayer(window.HopReachCartoTiles.withKey("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", cfg.cartoApiKey || ""), {
     pane: "labels",
     maxZoom: 19,
   });
@@ -219,7 +220,7 @@
     if (!cm || !cm.tiles || cm.tiles.length === 0) return;
     const tileLayers = cm.tiles.map((t) => {
       const b = t.bounds;
-      const overlay = L.imageOverlay(`data/${t.image}?t=${Date.parse(S.currentMeta.generated_at)}`, [[b.South, b.West], [b.North, b.East]], {
+      const overlay = L.imageOverlay(`${dataBase}/${t.image}?t=${Date.parse(S.currentMeta.generated_at)}`, [[b.South, b.West], [b.North, b.East]], {
         interactive: false,
       });
       // Nearest-neighbour, same as the main coverage layer (see
@@ -527,10 +528,13 @@
       .then((geojson) => {
         const isFirstLoad = !S.lastGeneratedAt;
         S.currentGeojson = geojson;
+        document.getElementById("error-banner").style.display = "none";
+        window.HopReachRegions.showDataState("ready", geojson.features.length);
         renderFilteredRepeaters(isFirstLoad);
       })
       .catch((err) => {
         console.error(err);
+        window.HopReachRegions.showDataState("error");
         showError(`Could not load repeater data: ${err.message}`);
       });
   }
@@ -584,7 +588,7 @@
     // tiers looking blockier when zoomed in past their native resolution.
     S.coverageTileOverlays = cm.tiles.map((t) => {
       const b = t.bounds;
-      const overlay = L.imageOverlay(`data/${t.image}?t=${Date.parse(S.currentMeta.generated_at)}`, [[b.South, b.West], [b.North, b.East]], {
+      const overlay = L.imageOverlay(`${dataBase}/${t.image}?t=${Date.parse(S.currentMeta.generated_at)}`, [[b.South, b.West], [b.North, b.East]], {
         opacity: 1,
         interactive: false,
       });
@@ -693,9 +697,10 @@
   // enough that a real (if slow) network-bound stage — a big DEM tile
   // fetch, a slow CoreScope response — doesn't false-positive.
   const PROGRESS_STALE_MS = 3 * 60 * 1000;
+  let lastCompletedProgress = null;
 
   function pollProgress() {
-    fetch(`data/progress.json?t=${Date.now()}`)
+    fetch(`${dataBase}/progress.json?t=${Date.now()}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((progress) => {
         const banner = document.getElementById("progress-banner");
@@ -703,7 +708,10 @@
         if (!progress || progress.stage === "done" || progress.stage === "error" || stale) {
           const wasShowing = !banner.classList.contains("hidden");
           banner.classList.add("hidden");
-          if (wasShowing) {
+          const completed = progress && progress.stage === "done" ? progress.updated_at : null;
+          if (wasShowing || (completed && completed !== lastCompletedProgress)) {
+            lastCompletedProgress = completed;
+            // Also catch a first regional run that completed between polls.
             // A generation just finished, failed, or (per `stale` above)
             // was silently killed — refresh the map data either way.
             loadData();

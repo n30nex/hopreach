@@ -59,10 +59,7 @@ func main() {
 	}
 	defer lock.Close()
 
-	cfg := toAppConfig(yc)
-	cfg.forceRecompute = *force || *forceAllTiers
-	cfg.forceAllTiers = *forceAllTiers
-	if err := run(cfg); err != nil {
+	if err := runConfigured(yc, *force, *forceAllTiers, run); err != nil {
 		log.Fatalf("hopreach: %v", err)
 	}
 }

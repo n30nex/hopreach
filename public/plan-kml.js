@@ -167,7 +167,9 @@
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const { url } = await resp.json();
-        const fullUrl = new URL(url, location.href).toString();
+        const sharedUrl = new URL(url, location.href);
+        if (window.HOPREACH_CONFIG.iata) sharedUrl.searchParams.set("iata", window.HOPREACH_CONFIG.iata);
+        const fullUrl = sharedUrl.toString();
         resultEl.innerHTML = `Link (expires in 7 days): <a href="${fullUrl}">${fullUrl}</a>`;
         if (navigator.clipboard) navigator.clipboard.writeText(fullUrl).catch(() => {});
       } catch (err) {

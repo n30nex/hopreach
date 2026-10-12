@@ -66,35 +66,7 @@ const (
 // and resolvePrefixes needs the full directory to have a chance at
 // resolving every hop.
 func (c *Client) FetchAllNodes(ctx context.Context) ([]Node, error) {
-	var nodes []Node
-	offset := 0
-	for {
-		url := fmt.Sprintf("%s/api/nodes?limit=%d&offset=%d", c.BaseURL, pageLimit, offset)
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			return nil, fmt.Errorf("corescope: building request for %s: %w", url, err)
-		}
-		resp, err := c.HTTP.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("corescope: fetching %s: %w", url, err)
-		}
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			return nil, fmt.Errorf("corescope: fetching %s: unexpected status %d", url, resp.StatusCode)
-		}
-		var page nodesResponse
-		err = json.NewDecoder(resp.Body).Decode(&page)
-		resp.Body.Close()
-		if err != nil {
-			return nil, fmt.Errorf("corescope: decoding response from %s: %w", url, err)
-		}
-		nodes = append(nodes, page.Nodes...)
-		offset += len(page.Nodes)
-		if len(page.Nodes) == 0 || offset >= page.Total {
-			break
-		}
-	}
-	return nodes, nil
+	return c.fetchNodes(ctx, "")
 }
 
 // scopeStatsWindow is fixed at CoreScope's own longest supported window
@@ -113,7 +85,7 @@ const scopeStatsWindow = "7d"
 // against, rather than guessing at region names ourselves.
 func (c *Client) FetchKnownRegionNames(ctx context.Context) ([]string, error) {
 	url := fmt.Sprintf("%s/api/scope-stats?window=%s", c.BaseURL, scopeStatsWindow)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.scopedURL(url), nil)
 	if err != nil {
 		return nil, fmt.Errorf("corescope: building request for %s: %w", url, err)
 	}
@@ -233,7 +205,7 @@ func (c *Client) FetchRegionParticipation(ctx context.Context, since time.Time, 
 	offset := 0
 	for {
 		url := fmt.Sprintf("%s/api/packets?limit=%d&offset=%d", c.BaseURL, packetPageLimit, offset)
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.scopedURL(url), nil)
 		if err != nil {
 			return Participation{}, fmt.Errorf("corescope: building request for %s: %w", url, err)
 		}

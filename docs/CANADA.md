@@ -83,3 +83,51 @@ regional selector and mesh client in a deterministic browser fixture, including
 YKF/YYZ navigation, back/forward, invalid URLs, empty/error states and API
 isolation. It does not replace full map/planner/simulator validation against the
 deployed candidate and cached terrain output.
+
+## Measured coverage from MeshMapper
+
+Enable the `meshmapper` section and mount its integration-key file read-only.
+`MESHMAPPER_API_KEY` is a server-only alternative; neither credential nor its
+file path is rendered into browser configuration. Persist `/data/meshmapper`
+outside the public document root. The [official Coverage API](https://wiki.meshmapper.net/coverage-api/)
+is requested once before the sequential terrain batch, or by
+`hopreach -sync-measured` under the same process lock. This command also respects
+the saved cooldown: `-force` never bypasses upstream quotas.
+
+This importer requires a **global schema 2 key**. Single/group/merged regional
+responses are rejected explicitly because a merged grid cannot be assigned
+faithfully to separate IATAs. The minimum global interval is 12 hours; 304s,
+failures and process interruptions consume that interval. ETags and next-attempt
+times persist before/after requests, and longer Retry-After/429 reset windows win.
+The client uses gzip, a 10-minute deadline, 256 MiB wire and 4 GiB decoded caps.
+There are no visitor-triggered upstream requests or automatic rapid retries.
+
+The global document is parsed one region and cell at a time. Only configured
+Canadian IATA cells whose centres pass the exact Canadian polygon and that
+IATA's radius survive. Foreign sections are discarded; late JSON metadata is
+supported. At most 100,000 cells per IATA are retained, with an explicit partial
+flag. Bounded private candidates are published only after the entire envelope
+passes validation. Errors preserve last-good regional files. An omitted region
+retains its old snapshot and is disclosed in the public refresh status.
+
+The optional **Measured coverage · MeshMapper** checkbox draws source-provided
+cell bounds on one canvas. A sparse latitude index culls outside the viewport;
+over 6,000 visible cells prompts a zoom-in rather than drawing an arbitrary
+subset. The browser fetches only the selected regional cache and safe refresh
+status once per page. The checkbox state is retained in the URL. Freshness,
+missing/error/stale state and partial caches are labelled with MeshMapper
+attribution. These are historical measurements across **all reported radio
+configurations**; global feeds do not support radio filtering. They are separate
+from the terrain prediction's configured frequency, power and antenna model.
+
+Country filtering uses an exact latitude-edge index preserving polygon holes
+and unions. On a synthetic 36,000-edge polygon (Windows amd64, i5-4690K),
+`go test ./internal/geo -bench BenchmarkPreparedBoundary -benchtime=200ms`
+measured 51,796 ns/point for the full scan and 475.7 ns/point indexed, both with
+zero query allocations. This measures containment only, not end-to-end import
+throughput or the real country polygon. The stream regression imports a large
+gzipped foreign region while bounding decoder reads and retaining no foreign
+files; unit tests also cover last-good preservation, gzip, ETags, quota state,
+Retry-After, null SNR, epoch milliseconds and invalid geometry. Browser fixtures
+exercise the actual canvas module, attribution, separate layer toggle and IATA
+switch without credentials or a live MeshMapper request.

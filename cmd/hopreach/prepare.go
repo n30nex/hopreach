@@ -44,15 +44,16 @@ func runPrepare(yc yconfig.Config, configPath string) error {
 // json.Marshal'd rather than text-templated, so site names/subtitles with
 // quotes or other special characters are always encoded safely.
 type jsConfig struct {
-	Regions        yconfig.RegionsConfig `json:"regions"`
-	SiteName       string                `json:"siteName"`
-	SiteSubtitle   string                `json:"siteSubtitle"`
-	MapCenter      []float64             `json:"mapCenter"`
-	MapZoom        int                   `json:"mapZoom"`
-	DataURL        string                `json:"dataUrl"`
-	MetaURL        string                `json:"metaUrl"`
-	DemZoom        int                   `json:"demZoom"`
-	DemTileURLBase string                `json:"demTileURLBase"`
+	MeshMapperEnabled bool                  `json:"meshMapperEnabled"`
+	Regions           yconfig.RegionsConfig `json:"regions"`
+	SiteName          string                `json:"siteName"`
+	SiteSubtitle      string                `json:"siteSubtitle"`
+	MapCenter         []float64             `json:"mapCenter"`
+	MapZoom           int                   `json:"mapZoom"`
+	DataURL           string                `json:"dataUrl"`
+	MetaURL           string                `json:"metaUrl"`
+	DemZoom           int                   `json:"demZoom"`
+	DemTileURLBase    string                `json:"demTileURLBase"`
 	// CARTO's raster basemaps (the Dark base layer and its label/road
 	// overlays) require an API key; without one every tile carries an
 	// "API KEY REQUIRED" watermark. Empty means anonymous tiles.
@@ -79,6 +80,7 @@ type jsConfig struct {
 
 func writeConfigJS(yc yconfig.Config) error {
 	var c jsConfig
+	c.MeshMapperEnabled = yc.MeshMapper.Enabled
 	c.Regions = yc.Regions
 	c.SiteName = yc.Site.Name
 	c.SiteSubtitle = yc.Site.Subtitle
@@ -126,7 +128,7 @@ func writeConfigJS(yc yconfig.Config) error {
 // nginxTemplateData is the fields available to nginxConfTemplate.
 type nginxTemplateData struct {
 	CoreScopeAPIURL string
-	Regional       bool
+	Regional        bool
 }
 
 func writeNginxConf(yc yconfig.Config) error {

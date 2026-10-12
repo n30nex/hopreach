@@ -240,3 +240,12 @@ schedule:
   cron: '0 4 * * *'
 share:
   store_dir: /data/shared-plans
+
+# Optional measured grid. Global integration key stays in a private mounted file.
+# Persist state_dir across container replacements so quotas survive restarts.
+meshmapper:
+  enabled: false
+  api_key_file: /run/secrets/meshmapper-api-key
+  state_dir: /data/meshmapper
+  interval_hours: 12
+  max_cells_per_region: 100000

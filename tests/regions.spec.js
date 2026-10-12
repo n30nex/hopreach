@@ -22,7 +22,7 @@ async function fixture(page, mode = "normal") {
     } else if (path.includes("/api/nodes")) {
       await route.fulfill({ status: mode === "error" ? 502 : 200, contentType: "application/json", body: JSON.stringify({ nodes: mode === "empty" ? [] : [{ public_key: path.includes("YKF") ? "waterloo" : "toronto" }] }) });
     } else {
-      await route.fulfill({ contentType: "text/html", body: `<!doctype html><html><head><style>.hidden,[hidden]{display:none!important}</style></head><body>
+      await route.fulfill({ contentType: "text/html", body: `<!doctype html><html><head><meta charset="utf-8"><style>.hidden,[hidden]{display:none!important}</style></head><body>
         <a id="canadaverse-brand" hidden>Canadaverse</a>${controls}${replay}<footer id="regional-footer" hidden>HopReach</footer>
         <p id="node-result"></p><script>window.HOPREACH_CONFIG=${JSON.stringify(config)}</script>
         <script src="/regions.js"></script><script src="/mesh-api.js"></script>

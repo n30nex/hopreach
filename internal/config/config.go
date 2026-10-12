@@ -38,6 +38,7 @@ type Config struct {
 	Map         MapConfig         `yaml:"map"`
 	Region      RegionConfig      `yaml:"region"`
 	Regions     RegionsConfig     `yaml:"regions"`
+	MeshMapper  MeshMapperConfig  `yaml:"meshmapper"`
 	CoreScope   CoreScopeConfig   `yaml:"corescope"`
 	Beacon      BeaconConfig      `yaml:"beacon"`
 	Source      SourceConfig      `yaml:"source"`
@@ -370,8 +371,9 @@ type RemoteWorkerConfig struct {
 // container-correct absolute paths for those three.
 func Default() Config {
 	return Config{
-		OutputDir: "public/data",
-		Source:    SourceConfig{RequestConcurrency: 12},
+		OutputDir:  "public/data",
+		MeshMapper: MeshMapperConfig{StateDir: "meshmapper-cache", IntervalHours: 12, MaxCellsPerRegion: 100000},
+		Source:     SourceConfig{RequestConcurrency: 12},
 		Site: SiteConfig{
 			Name:          "HopReach Coverage",
 			Subtitle:      "MeshCore repeater map, refreshed daily",
@@ -528,6 +530,9 @@ func Load(flagVal string) (Config, string, error) {
 // only the handful of mistakes that would otherwise fail confusingly deep
 // inside the pipeline (or, for GPU.Mode, silently do the wrong thing).
 func (c Config) Validate() error {
+	if err := c.validateMeshMapper(); err != nil {
+		return err
+	}
 	if err := c.validateRegions(); err != nil {
 		return err
 	}

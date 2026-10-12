@@ -42,6 +42,12 @@
     <select id="iata-select" aria-describedby="regional-status"></select>
     <p id="regional-warning" role="alert" hidden></p>
     <p id="regional-status" role="status" aria-live="polite"></p>
+    <div id="meshmapper-controls" hidden>
+      <label><input type="checkbox" id="meshmapper-toggle"> Measured coverage · MeshMapper</label>
+      <a href="https://meshmapper.net/" target="_blank" rel="noopener">Source</a>
+      <details><summary>Measured grid legend</summary>Green: two-way link · Cyan: discovery · Orange: transmit only · Purple: receive only · Grey: no route · Red: no connection. Dominant historical observations; not a guarantee of current reception.</details>
+      <p id="meshmapper-status" role="status" aria-live="polite">Historical measurements across all reported radio configurations; separate from terrain predictions.</p>
+    </div>
   </section>
   <div id="error-banner"></div>
   <div id="progress-banner" class="hidden">
@@ -899,6 +905,7 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="config.js"></script>
 <script src="regions.js"></script>
+<script src="meshmapper.js"></script>
 <script src="carto-tiles.js"></script>
 <script src="wasm_exec.js"></script>
 <script src="wasm-bridge.js"></script>

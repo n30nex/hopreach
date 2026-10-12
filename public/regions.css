@@ -28,3 +28,9 @@
   #canadaverse-brand img { width: 1.8rem; height: 1.8rem; }
   #regional-footer { font-size: .65rem; }
 }
+
+#meshmapper-controls { margin-top: .4rem; padding-top: .3rem; border-top: 1px solid var(--border); font-size: .8rem; }
+#meshmapper-controls a { color: var(--accent); }
+#meshmapper-controls details { display: inline-block; margin-left: .4rem; }
+#meshmapper-status { margin: .2rem 0 0; color: var(--text-muted); line-height: 1.4; }
+.meshmapper-canvas { pointer-events: none; }

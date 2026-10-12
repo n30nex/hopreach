@@ -8,6 +8,7 @@
   document.getElementById("site-subtitle").textContent = cfg.siteSubtitle;
 
   const map = L.map("map").setView(cfg.mapCenter, cfg.mapZoom);
+  window.HopReachMeshMapper.init({map,config:cfg});
 
   // Shared collapsible-header pattern for the small custom controls
   // stacked top-right (Map detail, region scope filter, and — added by

@@ -112,9 +112,11 @@
       // so reloading the setup restores the actual-vs-predicted comparison.
       // Already plain arrays/objects, so it serialises directly.
       episode: S.lastEpisode || undefined,
+      provenance: S.setupProvenance || undefined,
     };
     saveAllSetups(all);
     S.currentSetupId = id;
+    window.SimPresets.restore(S.setupProvenance);
     nameInput.value = name;
     refreshSetupSelect();
     setStatus("sim-status", `Saved setup "${name}".`);
@@ -135,6 +137,7 @@
 
   function newSetup() {
     S.currentSetupId = null;
+    window.SimPresets.restore(null);
     document.getElementById("sim-setup-name").value = "";
     clearNodes();
     refreshSetupSelect();
@@ -147,10 +150,12 @@
   // both end up in exactly the same state regardless of where the data
   // came from.
   function applySetupData(s) {
+    S.linksGeneration++; // discard any link build started for the previous workspace
     S.simNodes = s.nodes || [];
     S.simLinks = s.links || [];
     S.simMessageGenerators = s.messageGenerators || [];
     S.simNodePrefsOverrides = s.nodePrefsOverrides || {};
+    window.SimPresets.restore(s.provenance || null);
     document.getElementById("sim-connectivity-source").value = s.connectivitySource || "blend";
     document.getElementById("sim-seed").value = s.seed != null ? s.seed : 1;
     document.getElementById("sim-max-time").value = s.maxSimTimeMs != null ? s.maxSimTimeMs : 60000;
@@ -180,7 +185,7 @@
     if (S.simLinks.length > 0) {
       setStatus(
         "sim-links-status",
-        `${S.simLinks.length} directed link${S.simLinks.length === 1 ? "" : "s"} restored from "${s.name || "this setup"}" (${s.connectivitySource || "model"}).`
+        `${S.simLinks.length} directed link${S.simLinks.length === 1 ? "" : "s"} restored from "${s.name || "this setup"}"${S.setupProvenance ? " (simulation directions from the neighbour snapshot)" : ` (${s.connectivitySource || "model"})`}.`
       );
     } else {
       setStatus("sim-links-status", "Connectivity not built yet for the current node set — click \"Build links\".");
@@ -219,6 +224,7 @@
       seed: document.getElementById("sim-seed").value,
       maxSimTimeMs: document.getElementById("sim-max-time").value,
       trials: document.getElementById("sim-trials").value,
+      provenance: S.setupProvenance || undefined,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");

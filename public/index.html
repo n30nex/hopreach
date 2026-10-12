@@ -260,6 +260,7 @@
             <span class="sim-acc-chevron">▸</span>
           </button>
           <div class="sim-acc-body">
+            <button type="button" id="sim-preset-ykf" class="plan-full-width-btn" hidden>Load YKF metro setup</button>
             <div class="plan-row">
               <select id="sim-setup-select"></select>
               <button id="sim-setup-new" title="Start a fresh setup">New</button>
@@ -275,6 +276,14 @@
               <input type="file" id="sim-setup-import-file" accept="application/json" class="hidden">
             </div>
           </div>
+        </div>
+
+        <div id="sim-preset-provenance" class="plan-hint" role="note" hidden>
+          <div id="sim-preset-summary"></div>
+          <details>
+            <summary>Sources and simulation assumptions</summary>
+            <div id="sim-preset-details"></div>
+          </details>
         </div>
 
         <!-- Load → Connectivity → Senders → Run is the real required
@@ -931,6 +940,7 @@
 <script src="sim-modals.js"></script>
 <script src="sim-window.js"></script>
 <script src="sim-nodes.js"></script>
+<script src="sim-presets.js"></script>
 <script src="sim-setups.js"></script>
 <script src="sim-panel.js"></script>
 <script src="sim-nodes-modal.js"></script>

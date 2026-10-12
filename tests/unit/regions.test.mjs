@@ -25,7 +25,7 @@ test("unknown, foreign and traversal IATAs resolve visibly to configured default
   assert.equal(regions.resolve(config, "").invalid, false);
 });
 test("native navigation provides deep links without carrying another region's shared plan", () => {
-  const url = regions.regionURL("https://example.test/?iata=YKF&plan=abc", "YYZ", config.regions.entries);
+  const url = regions.regionURL("https://example.test/?iata=YKF&plan=abc&setup=ykf-metro", "YYZ", config.regions.entries);
   assert.equal(url, "https://example.test/?iata=YYZ");
   assert.throws(() => regions.regionURL(url, "SEA", config.regions.entries));
 });

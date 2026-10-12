@@ -1,0 +1,27 @@
+{
+  "name": "YKF metro synthetic test setup",
+  "nodes": [
+    {"id":"fixture-a","source":"real","refId":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","label":"<b>Fixture Cambridge</b>","lat":43.4,"lon":-80.35,"address":"aaaaaaaaaaaa","regions":[],"hashSize":1,"denyUnscoped":false},
+    {"id":"fixture-b","source":"real","refId":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","label":"Fixture Waterloo","lat":43.5,"lon":-80.5,"address":"bbbbbbbbbbbb","regions":[],"hashSize":1,"denyUnscoped":false},
+    {"id":"fixture-c","source":"real","refId":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","label":"Fixture Guelph","lat":43.55,"lon":-80.3,"address":"cccccccccccc","regions":[],"hashSize":1,"denyUnscoped":false}
+  ],
+  "links":[{"from":0,"to":1,"snrDb":0},{"from":1,"to":0,"snrDb":0},{"from":1,"to":2,"snrDb":0},{"from":2,"to":1,"snrDb":0}],
+  "connectivitySource":"corescope",
+  "messageGenerators":[{"id":"sender-a","nodeIndex":0,"region":"","direct":false,"hashSize":1,"count":3,"minPayload":16,"maxPayload":24,"minGapMs":3000,"maxGapMs":5000}],
+  "nodePrefsOverrides":{
+    "fixture-a":{"radio":{"freqMhz":910.525,"bwKhz":62.5,"sf":7,"cr":5,"explicitHeader":true,"crcEnabled":true}},
+    "fixture-b":{"radio":{"freqMhz":910.525,"bwKhz":62.5,"sf":7,"cr":5,"explicitHeader":true,"crcEnabled":true}},
+    "fixture-c":{"radio":{"freqMhz":910.525,"bwKhz":62.5,"sf":7,"cr":5,"explicitHeader":true,"crcEnabled":true}}
+  },
+  "seed":1,"maxSimTimeMs":30000,"trials":10,
+  "provenance":{
+    "id":"ykf-metro","generatedAt":"2026-10-12T12:00:00.000Z",
+    "summary":"Synthetic fixture only: invented nodes and adjacency for browser tests.",
+    "assumptions":["Observed adjacency is simulated in both directions; reciprocity is not measured.","0 dB SNR, radio settings, relay policy and generated traffic are simulation assumptions."],
+    "sources":[
+      {"url":"https://live.meshcore.ca/","fetchedAt":"2026-10-12T11:59:00.000Z","nodeCount":3,"pairCount":1},
+      {"url":"https://dev.canadaverse.org/","fetchedAt":"2026-10-12T11:59:30.000Z","nodeCount":3,"pairCount":2}
+    ],
+    "bounds":{"south":43.2,"west":-80.7,"north":43.7,"east":-80.1}
+  }
+}

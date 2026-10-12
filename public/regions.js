@@ -32,6 +32,7 @@
     url.searchParams.set("iata", iata);
     // A shared plan is tied to the view it was shared from.
     url.searchParams.delete("plan");
+    url.searchParams.delete("setup");
     return url.href;
   }
 

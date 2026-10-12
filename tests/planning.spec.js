@@ -1,11 +1,9 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
-const { gotoReady } = require("./helpers");
+const { gotoReady, waitForRepeaterData } = require("./helpers");
 
-// None of this file's tests touch real repeater data (add-repeater/LOS are
-// client-only bookkeeping, companion pin is pure UI state) — see
-// helpers.js for why readiness here doesn't wait on the live CoreScope
-// fetch.
+// Most cases need only the client-side tools. The connection test waits for
+// repeater data separately; nearby fixture nodes may render as one cluster.
 test.beforeEach(async ({ page }) => {
   await gotoReady(page);
 });
@@ -74,13 +72,12 @@ test("companion pin toggles on and off", async ({ page }) => {
 // end across several seeded trials and reports how often the other end
 // actually received it, plus which single hop is weakest.
 //
-// Genuinely network-dependent (it needs real repeaters to connect and real
-// DEM tiles for the terrain), so it's slow-marked and skips rather than
-// fails on an instance with too few repeaters to bridge.
+// The offline fixture supplies repeaters and terrain. Slow-marked because the
+// actual WASM planner and simulation still run; the fixture runner rejects skips.
 test("connect repeaters reports a simulated verdict for the route it found", async ({ page }) => {
   test.slow();
 
-  await page.waitForFunction(() => document.querySelectorAll(".leaflet-marker-icon").length > 3, null, { timeout: 120_000 });
+  await waitForRepeaterData(page, 4);
   // Un-cluster so individual repeaters are clickable rather than bubbles.
   await page.evaluate(() => {
     const cb = document.querySelector("#disable-clustering-toggle");

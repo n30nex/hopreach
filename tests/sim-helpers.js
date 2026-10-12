@@ -13,12 +13,14 @@
 const { expect } = require("@playwright/test");
 const { gotoReady } = require("./helpers");
 
+// Match the offline Ontario map centre; preserve the original north/south
+// spacing so link and simulation assertions exercise the same distances.
 const TEST_PLAN = {
   id: "e2e-sim-test-plan",
   name: "E2E Sim Test Plan",
   repeaters: [
-    { id: "sim-r1", label: "Sim Test Repeater A", lat: 56.0, lon: -4.6, antennaHeightM: null },
-    { id: "sim-r2", label: "Sim Test Repeater B", lat: 56.005, lon: -4.6, antennaHeightM: null },
+    { id: "sim-r1", label: "Sim Test Repeater A", lat: 43.50, lon: -80.435, antennaHeightM: null },
+    { id: "sim-r2", label: "Sim Test Repeater B", lat: 43.505, lon: -80.435, antennaHeightM: null },
   ],
   hopChains: [],
   overrides: [],
@@ -149,9 +151,9 @@ const UNORDERED_PLAN = {
   id: "e2e-sim-unordered-plan",
   name: "E2E Sim Unordered Plan",
   repeaters: [
-    { id: "u-r1", label: "Zulu Repeater", lat: 56.0, lon: -4.6, antennaHeightM: null },
-    { id: "u-r2", label: "Alpha Repeater", lat: 56.003, lon: -4.6, antennaHeightM: null },
-    { id: "u-r3", label: "Mike Repeater", lat: 56.006, lon: -4.6, antennaHeightM: null },
+    { id: "u-r1", label: "Zulu Repeater", lat: 43.50, lon: -80.435, antennaHeightM: null },
+    { id: "u-r2", label: "Alpha Repeater", lat: 43.503, lon: -80.435, antennaHeightM: null },
+    { id: "u-r3", label: "Mike Repeater", lat: 43.506, lon: -80.435, antennaHeightM: null },
   ],
   hopChains: [],
   overrides: [],

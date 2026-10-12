@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
-const { gotoReady } = require("./helpers");
+const { gotoReady, waitForRepeaterData } = require("./helpers");
 const {
   TEST_PLAN,
   UNORDERED_PLAN,
@@ -432,7 +432,7 @@ test("the API decodes real packet regions server-side", async ({ request }) => {
 // that — clustering especially, since a cluster bubble is itself a marker
 // and swallows clicks meant for the simulated node underneath it.
 test("entering simulate mode clears coverage and clustering, and restores them on exit", async ({ page }) => {
-  await page.waitForFunction(() => document.querySelectorAll(".leaflet-marker-icon").length > 0, { timeout: 60_000 });
+  await waitForRepeaterData(page);
 
   const state = () =>
     page.evaluate(() => {

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"text/template"
 
 	yconfig "hopreach/internal/config"
@@ -151,14 +153,37 @@ func writeNginxConf(yc yconfig.Config) error {
 }
 
 func writeCronFile(yc yconfig.Config, configPath string) error {
-	content := fmt.Sprintf(
-		"HOPREACH_CONFIG=%s\n"+
-			"%s root /app/hopreach >> /var/log/fetch.log 2>&1\n"+
-			"17 4 * * * root /app/hopreach-shareapi -prune >> /var/log/prune.log 2>&1\n",
-		configPath, yc.Schedule.Cron,
-	)
+	content, err := cronFileContent(yc, configPath, os.Getenv("GOMAXPROCS"), os.Getenv("GOMEMLIMIT"))
+	if err != nil {
+		return err
+	}
 	if err := os.WriteFile(cronFilePath, []byte(content), 0o644); err != nil {
 		return err
 	}
 	return os.Chmod(cronFilePath, 0o644)
+}
+
+func cronFileContent(yc yconfig.Config, configPath, maxProcs, memLimit string) (string, error) {
+	var env strings.Builder
+	fmt.Fprintf(&env, "HOPREACH_CONFIG=%s\n", configPath)
+	// cron does not inherit the container environment. Copy only these runtime
+	// controls, validating their syntax before writing literal environment lines.
+	for _, item := range []struct{ name, value, pattern string }{
+		{"GOMAXPROCS", maxProcs, `^[0-9]+$`},
+		{"GOMEMLIMIT", memLimit, `^(off|[0-9]+(([KMGT]i)?B)?)$`},
+	} {
+		if item.value == "" {
+			continue
+		}
+		valid, _ := regexp.MatchString(item.pattern, item.value)
+		if !valid {
+			return "", fmt.Errorf("%s has an invalid cron environment value", item.name)
+		}
+		fmt.Fprintf(&env, "%s=%s\n", item.name, item.value)
+	}
+	return fmt.Sprintf(
+		"%s%s root /app/hopreach >> /var/log/fetch.log 2>&1\n"+
+			"17 4 * * * root /app/hopreach-shareapi -prune >> /var/log/prune.log 2>&1\n",
+		env.String(), yc.Schedule.Cron,
+	), nil
 }

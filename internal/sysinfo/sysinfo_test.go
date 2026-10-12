@@ -173,6 +173,7 @@ func TestCPUModel(t *testing.T) {
 // actually sets a real, non-default limit at the expected fraction of
 // total memory, not just that it runs without panicking.
 func TestApplyGoMemoryLimit(t *testing.T) {
+	t.Setenv("GOMEMLIMIT", "")
 	total, err := TotalMemoryBytes()
 	if err != nil {
 		t.Skipf("no total memory available on this platform: %v", err)
@@ -186,5 +187,30 @@ func TestApplyGoMemoryLimit(t *testing.T) {
 	want := int64(float64(total) * goMemLimitFraction)
 	if !closeEnough(float64(got), float64(want)) {
 		t.Errorf("GOMEMLIMIT = %d, want approximately %d (%.0f%% of total memory %d)", got, want, goMemLimitFraction*100, total)
+	}
+}
+
+func TestApplyGoMemoryLimitPreservesExplicitRuntimeLimit(t *testing.T) {
+	v2Max, _, _, _ := withCgroupPaths(t)
+	if err := os.WriteFile(v2Max, []byte("671088640\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		value string
+		limit int64
+	}{
+		{"384MiB", 384 << 20},
+		{"off", 1<<63 - 1},
+	} {
+		t.Run(tc.value, func(t *testing.T) {
+			t.Setenv("GOMEMLIMIT", tc.value)
+			// The Go runtime already applied this value before main started.
+			original := debug.SetMemoryLimit(tc.limit)
+			t.Cleanup(func() { debug.SetMemoryLimit(original) })
+			ApplyGoMemoryLimit()
+			if got := debug.SetMemoryLimit(-1); got != tc.limit {
+				t.Fatalf("explicit GOMEMLIMIT was overwritten: got %d, want %d", got, tc.limit)
+			}
+		})
 	}
 }

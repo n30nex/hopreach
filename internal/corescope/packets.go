@@ -191,7 +191,7 @@ func (c *Client) FetchPacketsBetween(
 // getJSON performs one GET and decodes the body, with the same error
 // wrapping every other fetch in this package uses.
 func (c *Client) getJSON(ctx context.Context, url string, into any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.scopedURL(url), nil)
 	if err != nil {
 		return fmt.Errorf("corescope: building request for %s: %w", url, err)
 	}

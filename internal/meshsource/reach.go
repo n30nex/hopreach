@@ -24,6 +24,13 @@ const reachWorkers = 12
 func FetchAllReach(
 	ctx context.Context, src Source, nodes []Node, days int, progress func(done, total int),
 ) map[string][]ReachLink {
+	return FetchAllReachWithWorkers(ctx, src, nodes, days, reachWorkers, progress)
+}
+
+// FetchAllReachWithWorkers lets a small deployment protect its observation
+// backend. Workers are bounded even if a caller bypasses config validation.
+func FetchAllReachWithWorkers(ctx context.Context, src Source, nodes []Node, days, workers int, progress func(done, total int)) map[string][]ReachLink {
+	workers = max(1, min(workers, reachWorkers))
 	results := make(map[string][]ReachLink, len(nodes))
 	var mu sync.Mutex
 
@@ -36,7 +43,7 @@ func FetchAllReach(
 	var wg sync.WaitGroup
 	done := 0
 	total := len(nodes)
-	for w := 0; w < reachWorkers; w++ {
+	for w := 0; w < workers; w++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

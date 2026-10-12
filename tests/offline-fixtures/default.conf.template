@@ -1,0 +1,24 @@
+# Test-only nginx plumbing. Both API translation and WASM remain the real app.
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+    add_header Cache-Control "no-cache";
+
+    location /dem-tiles/ {
+        proxy_pass http://fixture:8000/terrarium/;
+    }
+    location = /e2e-ready {
+        proxy_pass http://fixture:8000/ready;
+    }
+    location /corescope-api/ {
+        proxy_pass {{.CoreScopeAPIURL}}/;
+    }
+    location /mesh-api/ {
+        proxy_pass http://127.0.0.1:8081;
+    }
+    location /api/ {
+        proxy_pass http://127.0.0.1:8081;
+    }
+}

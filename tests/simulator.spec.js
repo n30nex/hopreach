@@ -448,7 +448,10 @@ test("clicking a repeater marker opens the repeaters modal, and applied settings
   await page.click("#sim-load-planned");
   await expect(page.locator("#sim-node-count-badge")).toHaveText("2");
 
-  await clickUntilVisible(page.locator(".sim-marker-icon").first(), page.locator("#sim-nodes-modal"), { force: true });
+  // Pan the seeded repeater clear of the right-edge map controls, then use
+  // normal hit testing so this exercises the marker's actual click handler.
+  await page.evaluate(() => window.__hopreachSimulatorDebug.panBy(300, 300));
+  await clickUntilVisible(page.locator(".sim-marker-icon").first(), page.locator("#sim-nodes-modal"));
   const firstRow = page.locator("#sim-nodes-modal-tbody tr").first();
   // regions (text), allowUnscoped (checkbox), floodMax, floodMaxUnscoped,
   // radioFreqMhz/radioBwKhz/radioSf/radioCr (4), txDelayFactor,

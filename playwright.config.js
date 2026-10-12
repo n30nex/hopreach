@@ -1,38 +1,29 @@
 // @ts-check
 const { defineConfig, devices } = require("@playwright/test");
 
-// End-to-end coverage for the frontend's interactive tools (planning,
-// simulator) against a real running container — not mocks, since the whole
-// point is exercising the real WASM module, the real nginx/proxy routes,
-// and the real CoreScope fetch, the same way a user actually hits them.
-// Deliberately does NOT wait for a full coverage compute pass to finish
-// (that's minutes-to-hours depending on GPU/CPU and region size, covered
-// instead by internal/compute and internal/coverage's own Go tests, plus
-// the WASM/backend parity guarantee of compiling the exact same
-// internal/propagation code twice) — only page load, repeater data being
-// present, and the client-side WASM tools.
+// Same production Go/WASM/nginx image, deterministic CoreScope + terrain input.
+// A small complete CPU pass makes coverage/scope/replay tests non-skippable.
+const composeFile = process.env.HOPREACH_E2E_COMPOSE || "tests/offline-fixtures/compose.yml";
+const baseURL = process.env.HOPREACH_E2E_BASE_URL || `http://127.0.0.1:${process.env.HOPREACH_E2E_PORT || 8080}`;
+const reporters = process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]];
+reporters.push(["./tests/offline-fixtures/no-skips-reporter.js"]);
 module.exports = defineConfig({
   testDir: "./tests",
+  testMatch: "**/*.spec.js",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
+  reporter: reporters,
   use: {
-    baseURL: "http://127.0.0.1:8080",
+    baseURL,
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    // Assumes the image is already built (`docker compose build` — CI does
-    // this as its own prior step so build failures show up distinctly from
-    // test failures; local runs can rely on Compose building it on first
-    // `up` if `hopreach:latest` doesn't exist yet).
-    command: "docker compose up",
-    url: "http://127.0.0.1:8080",
-    // Local dev: reuse whatever's already running (matches this project's
-    // usual local-testing flow — see README's "Local development"). CI:
-    // always start fresh.
+  webServer: process.env.HOPREACH_E2E_EXTERNAL_SERVER === "1" ? undefined : {
+    // Build separately so compilation failures are distinct from UX failures.
+    command: `docker compose -f "${composeFile}" up`,
+    url: `${baseURL}/e2e-ready`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

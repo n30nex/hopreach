@@ -37,6 +37,8 @@ type Config struct {
 	Site        SiteConfig        `yaml:"site"`
 	Map         MapConfig         `yaml:"map"`
 	Region      RegionConfig      `yaml:"region"`
+	Regions     RegionsConfig     `yaml:"regions"`
+	MeshMapper  MeshMapperConfig  `yaml:"meshmapper"`
 	CoreScope   CoreScopeConfig   `yaml:"corescope"`
 	Beacon      BeaconConfig      `yaml:"beacon"`
 	Source      SourceConfig      `yaml:"source"`
@@ -119,6 +121,8 @@ type RegionConfig struct {
 // left "both configured" meaning something only the factory's ordering
 // decided.
 type SourceConfig struct {
+	// RequestConcurrency caps reach fan-out and regional public API requests.
+	RequestConcurrency int `yaml:"request_concurrency"`
 	// Type is "corescope" or "beacon". Empty means corescope, which is what
 	// every deployment predating this key is running.
 	Type string `yaml:"type"`
@@ -199,6 +203,9 @@ type BeaconConfig struct {
 type CoreScopeConfig struct {
 	APIURL                string  `yaml:"api_url"`
 	RequestTimeoutSeconds float64 `yaml:"request_timeout_seconds"`
+	// Region selects actual CoreScope observer-IATA membership. It is derived
+	// by ForIATA for regional maps and is independent of MeshCore RF scopes.
+	Region string `yaml:"region"`
 
 	// ScopeObservation is the resolved, canonical value after Load merges
 	// the "scope_observation" key with its deprecated "scope_inference"
@@ -364,7 +371,9 @@ type RemoteWorkerConfig struct {
 // container-correct absolute paths for those three.
 func Default() Config {
 	return Config{
-		OutputDir: "public/data",
+		OutputDir:  "public/data",
+		MeshMapper: MeshMapperConfig{StateDir: "meshmapper-cache", IntervalHours: 12, MaxCellsPerRegion: 100000},
+		Source:     SourceConfig{RequestConcurrency: 12},
 		Site: SiteConfig{
 			Name:          "HopReach Coverage",
 			Subtitle:      "MeshCore repeater map, refreshed daily",
@@ -521,6 +530,12 @@ func Load(flagVal string) (Config, string, error) {
 // only the handful of mistakes that would otherwise fail confusingly deep
 // inside the pipeline (or, for GPU.Mode, silently do the wrong thing).
 func (c Config) Validate() error {
+	if err := c.validateMeshMapper(); err != nil {
+		return err
+	}
+	if err := c.validateRegions(); err != nil {
+		return err
+	}
 	if c.OutputDir == "" {
 		return fmt.Errorf("output_dir must not be empty")
 	}

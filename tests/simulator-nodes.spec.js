@@ -466,7 +466,9 @@ test("companion labels never repeat, even after removing one and adding another"
   await page.click("#sim-open-nodes-modal");
   const firstRow = page.locator('#sim-nodes-modal-tbody tr[data-node-id]').filter({ hasText: "Companion 1" });
   await firstRow.locator('[data-act="remove"]').click();
-  await page.locator("#sim-nodes-modal [data-close]").first().click();
+  // Removing a node invalidates the previous report and closes its modals.
+  await expect(page.locator("#sim-nodes-modal")).toBeHidden();
+  await expect(page.locator("#sim-node-count-badge")).toHaveText("1");
 
   await page.click("#sim-add-companion");
   await map.click({ position: { x: box.width / 4, y: (3 * box.height) / 4 } });

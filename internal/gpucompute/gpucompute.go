@@ -1,3 +1,5 @@
+//go:build cgo && ((linux && amd64) || (darwin && (amd64 || arm64)) || (windows && amd64) || android)
+
 // Package gpucompute implements GPU-accelerated coverage computation via
 // WebGPU (wgpu-native, running on Vulkan on Linux). ComputeMargins is the
 // entry point; CPU (propagation.ComputeMarginsCPU) is always the trusted

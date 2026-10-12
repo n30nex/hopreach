@@ -26,6 +26,10 @@ func FromConfig(cfg config.Config) (meshsource.Source, error) {
 	if err != nil {
 		return nil, err
 	}
+	src, err = regional(src, cfg)
+	if err != nil {
+		return nil, err
+	}
 	if names := nonEmpty(cfg.Source.Scopes); len(names) > 0 {
 		return withConfiguredScopes{Source: src, names: names}, nil
 	}
@@ -74,9 +78,9 @@ func backendFor(cfg config.Config) (meshsource.Source, error) {
 		if cfg.CoreScope.APIURL == "" {
 			return nil, fmt.Errorf("corescope data source: corescope.api_url is required")
 		}
-		return meshsource.NewCoreScopeSource(
-			corescope.NewClient(cfg.CoreScope.APIURL, &http.Client{Timeout: timeout}),
-		), nil
+		c := corescope.NewClient(cfg.CoreScope.APIURL, &http.Client{Timeout: timeout})
+		c.Region = cfg.CoreScope.Region
+		return meshsource.NewCoreScopeSource(c), nil
 
 	default:
 		return nil, fmt.Errorf("unknown source type %q", kind)

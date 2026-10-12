@@ -175,10 +175,13 @@ const goMemLimitFraction = 0.75
 // shrunk from whole-region to per-tile — because nothing was telling the
 // GC to reclaim proactively as usage approached that ceiling rather than
 // only reacting to its own default growth heuristic. Called once at
-// process startup; a no-op (leaving Go's own default, effectively
-// unlimited, behaviour untouched) if TotalMemoryBytes can't determine
+// process startup; a no-op if the operator explicitly configured GOMEMLIMIT
+// (already applied by the Go runtime), or TotalMemoryBytes can't determine
 // anything (non-Linux, etc.).
 func ApplyGoMemoryLimit() {
+	if os.Getenv("GOMEMLIMIT") != "" {
+		return
+	}
 	total, err := TotalMemoryBytes()
 	if err != nil {
 		return

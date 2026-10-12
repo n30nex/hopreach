@@ -1,4 +1,5 @@
 // @ts-check
+const { expect } = require("@playwright/test");
 
 // Waits for the page to be genuinely interactive: the map rendered and the
 // WASM module (see wasm/main.go, public/wasm-bridge.js) ready — everything
@@ -9,12 +10,24 @@
 // meaningfully slower (or less reliable) from CI infrastructure than from
 // a normal dev machine — a dependency most tests here have no actual need
 // for (add-repeater/LOS/companion-pin/"load planned repeaters" are all
-// client-only). Only basic.spec.js's dedicated "repeater stats populate"
-// test should wait on real data, with its own generous timeout.
+// client-only). Tests that use existing repeaters wait separately below.
 async function gotoReady(page, path = "/") {
   await page.goto(path);
   await page.waitForSelector(".leaflet-container");
   await page.evaluate(() => window.__hopreachWasmReadyPromise);
 }
 
-module.exports = { gotoReady };
+// Cluster icons count visual groups, not loaded repeaters. Wait for populated
+// UI totals and any rendered marker shape, then let a test uncluster if it needs
+// to count or click individual nodes.
+async function waitForRepeaterData(page, minimum = 1) {
+  await expect.poll(async () => {
+    const counts = await page.locator("#count-active, #count-degraded, #count-silent").allTextContents();
+    return counts.length === 3 ? counts.reduce((sum, count) => sum + Number(count), 0) : 0;
+  }, { timeout: 30_000 }).toBeGreaterThanOrEqual(minimum);
+  await expect.poll(() => page.locator("#map .leaflet-marker-icon, #map path.leaflet-interactive").count(), {
+    timeout: 30_000,
+  }).toBeGreaterThan(0);
+}
+
+module.exports = { gotoReady, waitForRepeaterData };

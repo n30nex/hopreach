@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"text/template"
 
 	yconfig "hopreach/internal/config"
@@ -44,14 +46,16 @@ func runPrepare(yc yconfig.Config, configPath string) error {
 // json.Marshal'd rather than text-templated, so site names/subtitles with
 // quotes or other special characters are always encoded safely.
 type jsConfig struct {
-	SiteName       string    `json:"siteName"`
-	SiteSubtitle   string    `json:"siteSubtitle"`
-	MapCenter      []float64 `json:"mapCenter"`
-	MapZoom        int       `json:"mapZoom"`
-	DataURL        string    `json:"dataUrl"`
-	MetaURL        string    `json:"metaUrl"`
-	DemZoom        int       `json:"demZoom"`
-	DemTileURLBase string    `json:"demTileURLBase"`
+	MeshMapperEnabled bool                  `json:"meshMapperEnabled"`
+	Regions           yconfig.RegionsConfig `json:"regions"`
+	SiteName          string                `json:"siteName"`
+	SiteSubtitle      string                `json:"siteSubtitle"`
+	MapCenter         []float64             `json:"mapCenter"`
+	MapZoom           int                   `json:"mapZoom"`
+	DataURL           string                `json:"dataUrl"`
+	MetaURL           string                `json:"metaUrl"`
+	DemZoom           int                   `json:"demZoom"`
+	DemTileURLBase    string                `json:"demTileURLBase"`
 	// CARTO's raster basemaps (the Dark base layer and its label/road
 	// overlays) require an API key; without one every tile carries an
 	// "API KEY REQUIRED" watermark. Empty means anonymous tiles.
@@ -78,6 +82,8 @@ type jsConfig struct {
 
 func writeConfigJS(yc yconfig.Config) error {
 	var c jsConfig
+	c.MeshMapperEnabled = yc.MeshMapper.Enabled
+	c.Regions = yc.Regions
 	c.SiteName = yc.Site.Name
 	c.SiteSubtitle = yc.Site.Subtitle
 	c.MapCenter = []float64{yc.Map.CenterLat, yc.Map.CenterLon}
@@ -124,6 +130,7 @@ func writeConfigJS(yc yconfig.Config) error {
 // nginxTemplateData is the fields available to nginxConfTemplate.
 type nginxTemplateData struct {
 	CoreScopeAPIURL string
+	Regional        bool
 }
 
 func writeNginxConf(yc yconfig.Config) error {
@@ -142,18 +149,41 @@ func writeNginxConf(yc yconfig.Config) error {
 	}
 	defer f.Close()
 
-	return tmpl.Execute(f, nginxTemplateData{CoreScopeAPIURL: yc.CoreScope.APIURL})
+	return tmpl.Execute(f, nginxTemplateData{CoreScopeAPIURL: yc.CoreScope.APIURL, Regional: len(yc.Regions.Entries) > 0})
 }
 
 func writeCronFile(yc yconfig.Config, configPath string) error {
-	content := fmt.Sprintf(
-		"HOPREACH_CONFIG=%s\n"+
-			"%s root /app/hopreach >> /var/log/fetch.log 2>&1\n"+
-			"17 4 * * * root /app/hopreach-shareapi -prune >> /var/log/prune.log 2>&1\n",
-		configPath, yc.Schedule.Cron,
-	)
+	content, err := cronFileContent(yc, configPath, os.Getenv("GOMAXPROCS"), os.Getenv("GOMEMLIMIT"))
+	if err != nil {
+		return err
+	}
 	if err := os.WriteFile(cronFilePath, []byte(content), 0o644); err != nil {
 		return err
 	}
 	return os.Chmod(cronFilePath, 0o644)
+}
+
+func cronFileContent(yc yconfig.Config, configPath, maxProcs, memLimit string) (string, error) {
+	var env strings.Builder
+	fmt.Fprintf(&env, "HOPREACH_CONFIG=%s\n", configPath)
+	// cron does not inherit the container environment. Copy only these runtime
+	// controls, validating their syntax before writing literal environment lines.
+	for _, item := range []struct{ name, value, pattern string }{
+		{"GOMAXPROCS", maxProcs, `^[0-9]+$`},
+		{"GOMEMLIMIT", memLimit, `^(off|[0-9]+(([KMGT]i)?B)?)$`},
+	} {
+		if item.value == "" {
+			continue
+		}
+		valid, _ := regexp.MatchString(item.pattern, item.value)
+		if !valid {
+			return "", fmt.Errorf("%s has an invalid cron environment value", item.name)
+		}
+		fmt.Fprintf(&env, "%s=%s\n", item.name, item.value)
+	}
+	return fmt.Sprintf(
+		"%s%s root /app/hopreach >> /var/log/fetch.log 2>&1\n"+
+			"17 4 * * * root /app/hopreach-shareapi -prune >> /var/log/prune.log 2>&1\n",
+		env.String(), yc.Schedule.Cron,
+	), nil
 }

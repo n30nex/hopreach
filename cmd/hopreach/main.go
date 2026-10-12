@@ -34,6 +34,7 @@ func main() {
 	configFlag := flag.String("config", "", "path to config.yaml (default: $HOPREACH_CONFIG, then ./config.yaml)")
 	force := flag.Bool("force", false, "run even if within coverage.min_recompute_interval_hours (each tier still skips itself if it already completed today — see -force-all-tiers)")
 	forceAllTiers := flag.Bool("force-all-tiers", false, "also recompute every tier regardless of same-day freshness (implies -force); use after a config change that invalidates existing output, not for a routine restart/deploy")
+	measured := flag.Bool("sync-measured", false, "refresh cached MeshMapper data once, respecting persisted quota, then exit")
 	prepare := flag.Bool("prepare", false, "render config.js, nginx's site config, and the cron file from config.yaml, then exit")
 	flag.Parse()
 
@@ -59,10 +60,16 @@ func main() {
 	}
 	defer lock.Close()
 
-	cfg := toAppConfig(yc)
-	cfg.forceRecompute = *force || *forceAllTiers
-	cfg.forceAllTiers = *forceAllTiers
-	if err := run(cfg); err != nil {
+	if err := syncMeasured(yc); err != nil {
+		if *measured {
+			log.Fatalf("MeshMapper: %v", err)
+		}
+		log.Printf("MeshMapper: %v", err)
+	}
+	if *measured {
+		return
+	}
+	if err := runConfigured(yc, *force, *forceAllTiers, run); err != nil {
 		log.Fatalf("hopreach: %v", err)
 	}
 }

@@ -1,0 +1,44 @@
+# Six fictional Ontario repeaters and a small, complete CPU coverage pass.
+output_dir: /usr/share/nginx/html/data
+site:
+  name: HopReach synthetic test network
+  subtitle: Invented nodes and flat terrain for automated testing
+map:
+  center_lat: 43.50
+  center_lon: -80.435
+  zoom: 10
+region:
+  name: Synthetic Ontario test envelope
+  boundary_path: /config/fixture-boundary.geojson
+source:
+  type: corescope
+  request_concurrency: 2
+corescope:
+  api_url: http://fixture:8000
+  request_timeout_seconds: 5
+  scope_observation:
+    enabled: true
+    window_hours: 6
+terrain:
+  dem_zoom: 9
+  dem_cache_dir: /data/dem-cache
+  dem_tile_url_base: http://fixture:8000/terrarium
+propagation:
+  frequency_mhz: 915
+  antenna_height_m: 20
+  max_range_km: 20
+coverage:
+  image_width: 48
+  precision_width: 64
+  precision_dem_zoom: 9
+  precision_supersample: 1
+  precision_chunk_budget_mb: 32
+  standard_requires_gpu: false
+  calibrated_requires_gpu: false
+  precision_requires_gpu: false
+  calibrated_precision_requires_gpu: false
+gpu:
+  mode: cpu
+share:
+  store_dir: /data/shared-plans
+  listen_addr: 127.0.0.1:8081

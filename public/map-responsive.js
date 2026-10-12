@@ -69,7 +69,7 @@
     // "labels" pane below, which sits *above* the coverage overlay — see
     // that pane's setup further down. Using _all here as well as the
     // separate labels layer would just double the text up.
-    "Dark": L.tileLayer(HopReachCartoTiles.withKey("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", CARTO_KEY), {
+    "Dark": L.tileLayer(window.HopReachCartoTiles.withKey("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", CARTO_KEY), {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,
     }),
@@ -296,7 +296,7 @@
 
 
 
-  const darkRoads = L.tileLayer(HopReachCartoTiles.withKey("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", CARTO_KEY), {
+  const darkRoads = L.tileLayer(window.HopReachCartoTiles.withKey("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", CARTO_KEY), {
     pane: "roads",
     maxZoom: 19,
   });

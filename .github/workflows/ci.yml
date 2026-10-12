@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -50,31 +51,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - run: npm ci
+      - run: npm test
       - name: node --check public/*.js
         run: |
           for f in public/*.js; do
             echo "checking $f"
             node --check "$f"
           done
+      - name: Install deterministic UI test browser
+        run: npx playwright install --with-deps chromium
+      - name: Regional controls and isolation
+        run: npx playwright test --config=playwright.regions.config.js
 
-  # End-to-end tests (tests/*.spec.js, see playwright.config.js) against a
-  # real running container — the same image users actually deploy, not a
-  # dev-only shortcut. Deliberately doesn't wait for a full coverage
-  # compute pass (see playwright.config.js's own comment); repeaters.geojson
-  # populating from the real CoreScope fetch is enough for the client-side
-  # tools (planning, simulator) these tests exercise.
+  # Keep every tests/*.spec.js scenario, including regional isolation, and run
+  # the real Go/WASM/nginx image with synthetic API + deterministic DEM input.
+  # API/DEM URLs are pinned to the fixture; no production volume is mounted.
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HOPREACH_E2E_COMPOSE: tests/offline-fixtures/compose.yml
     steps:
       - uses: actions/checkout@v4
-
-      - name: Build hopreach:latest
-        run: docker compose build
 
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
+
+      - name: Verify synthetic API and terrain fixtures
+        run: python3 -B -m unittest discover -s tests/offline-fixtures -p test_server.py
+
+      - name: Build real HopReach test image
+        run: docker compose -f "$HOPREACH_E2E_COMPOSE" build
 
       - run: npm ci
 
@@ -86,9 +96,21 @@ jobs:
         env:
           CI: true
 
+      - name: Capture fixture and pipeline logs
+        if: always()
+        run: |
+          mkdir -p test-results
+          docker compose -f "$HOPREACH_E2E_COMPOSE" logs --no-color > test-results/compose.log
+
+      - name: Remove isolated test containers and volumes
+        if: always()
+        run: docker compose -f "$HOPREACH_E2E_COMPOSE" down --volumes --remove-orphans
+
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 14

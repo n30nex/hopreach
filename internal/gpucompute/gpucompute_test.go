@@ -1,3 +1,5 @@
+//go:build cgo && ((linux && amd64) || (darwin && (amd64 || arm64)) || (windows && amd64) || android)
+
 package gpucompute
 
 import "testing"

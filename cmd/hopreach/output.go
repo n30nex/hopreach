@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"hopreach/internal/calibration"
+	"hopreach/internal/config"
 	"hopreach/internal/coverage"
 	"hopreach/internal/meshsource"
 	"hopreach/internal/propagation"
@@ -231,13 +232,14 @@ type capabilities struct {
 }
 
 type meta struct {
-	GeneratedAt           string         `json:"generated_at"`
-	Source                string         `json:"source"`
-	Boundary              string         `json:"boundary"`
-	RequiredScope         string         `json:"required_scope"`
-	TotalRepeatersFetched int            `json:"total_repeaters_fetched"`
-	RepeatersInRegion     int            `json:"repeaters_in_region"`
-	Counts                map[string]int `json:"counts"`
+	Region                *config.IATARegion `json:"region,omitempty"`
+	GeneratedAt           string             `json:"generated_at"`
+	Source                string             `json:"source"`
+	Boundary              string             `json:"boundary"`
+	RequiredScope         string             `json:"required_scope"`
+	TotalRepeatersFetched int                `json:"total_repeaters_fetched"`
+	RepeatersInRegion     int                `json:"repeaters_in_region"`
+	Counts                map[string]int     `json:"counts"`
 
 	// Capabilities tells the front end which backend-dependent features are
 	// worth offering. Without it the map has to infer support from an empty

@@ -65,7 +65,7 @@ regions:
       zoom: 9
       radius_km: 200
     - iata: YHU
-      name: "MontrÃ©al"
+      name: "Montr\u00e9al"
       center_lat: 45.517502
       center_lon: -73.416901
       zoom: 9
@@ -131,7 +131,7 @@ regions:
       zoom: 9
       radius_km: 200
     - iata: YRQ
-      name: "Trois-RiviÃ¨res"
+      name: "Trois-Rivi\u00e8res"
       center_lat: 46.35279846191406
       center_lon: -72.67939758300781
       zoom: 9
@@ -155,7 +155,7 @@ regions:
       zoom: 9
       radius_km: 200
     - iata: YUL
-      name: "MontrÃ©al"
+      name: "Montr\u00e9al"
       center_lat: 45.467837
       center_lon: -73.742294
       zoom: 9

@@ -2,6 +2,22 @@ package config
 
 import "testing"
 
+func TestCanadianExamplePreservesAccentedCityNames(t *testing.T) {
+	cfg, _, err := Load("../../config.canada.example.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := make(map[string]string, len(cfg.Regions.Entries))
+	for _, region := range cfg.Regions.Entries {
+		names[region.IATA] = region.Name
+	}
+	for iata, want := range map[string]string{"YHU": "Montr\u00e9al", "YUL": "Montr\u00e9al", "YRQ": "Trois-Rivi\u00e8res"} {
+		if got := names[iata]; got != want {
+			t.Errorf("%s name = %q, want %q", iata, got, want)
+		}
+	}
+}
+
 func regionalConfig() Config {
 	c := Default()
 	c.Region.BoundaryPath = "canada.geojson"
